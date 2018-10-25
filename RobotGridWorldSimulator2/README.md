@@ -22,15 +22,15 @@ Clicking anywhere on the map grid area will toggle the building and removal of w
 
 Simulation Controls: "Toggle Trails" - Toggles the display of pproriately coloured trials for each robot "Speed" - A slider control to adjusts the speed of the simulated robot(s) movements.
 
-Creating RobotGrid World Robot Programs
+## Creating RobotGrid World Robot Programs
 
 At the beginning of your robot program, you must first import the grobot.py clientinto your own program. Usage:
 
-import grobot
+`import grobot`
 
 To create a new robot in the simulated world, use:
 
-robotname=grobot.NewRobot()
+`robotname=grobot.NewRobot()`
 
 Where: is a string which contains the name of the robot. If several robots are used, all must have unique names.
 
@@ -42,32 +42,35 @@ is a string that denotes one of the standard turtle shapes. Left blank or None i
 
 The parameters for this function are all optional, but if several robots are to be simulated simutaneously, the parameter must be supplied, and the initial positions (xpos, and ypos) must be different. E.g.:
 
-fred = grobot.NewRobot("fred", 1, 2, "blue")
+`fred = grobot.NewRobot("fred", 1, 2, "blue")`
 
 If the simulator is not running, an error message will be displayed, and the program will exit.and Python 2 and 3 compatible.
 
 Once a robot is created (instantiated), the robot object has five methods available. E.g. if the robot is instantiated as fred:
 
+~~~
  fred.forward() # Moves robot orthogonally forward one grid square.
- If way is blocked returns "Bang" and the robot will turn # into a black circle, otherwise returns "OK"
- If the robot has already returned "Bang", subsequent calls to # forward will return "Broken" 
+ # If way is blocked returns "Bang" and the robot will turn # into a black circle, otherwise returns "OK"
+ # If the robot has already returned "Bang", subsequent calls to # forward will return "Broken" 
  
  fred.right() 
- robot turns 90 degrees right, returns "OK", or "Broken" if a collision has occured 
+ # robot turns 90 degrees right, returns "OK", or "Broken" if a collision has occured 
  
  fred.left() 
- robot turns 90 degrees left, returns "OK", or "Broken" if a collision has occured 
+ # robot turns 90 degrees left, returns "OK", or "Broken" if a collision has occured 
  
  fred.look() 
- Returns a list of elements [viewLeft, viewDiagLeft, # viewForward, viewDiagRight, viewRight] 
- Each element can be either "Wall" if the forward way is blocked by a Wall, the name of a robot 
- blocking the way, or None if the way is clear. If a collison has occured, this will return a list of ["Broken"]*5. 
+ # Returns a list of elements [viewLeft, viewDiagLeft, # viewForward, viewDiagRight, viewRight] 
+ # Each element can be either "Wall" if the forward way is blocked by a Wall, the name of a robot 
+ # blocking the way, or None if the way is clear. If a collison has occured, this will return a list of ["Broken"]*5. 
  
  fred.init(x,y) # Resets and initialises the named robot to start at position (x, y). Note. x and y are optional. 
- If left out uses last provided values from an init() or NewRobot
+ # If left out uses last provided values from an init() or NewRobot
+~~~
 
 There is one function in the module availalble: grobot.demo(). This provides a short demo of how to create a NewRobot() and use the methods described above. The demo is run automatically if the module is run directly (i.e. not imported):
 
+~~~
 def demo():
  fred=NewRobot("fred", 1, 1) 
  bill=NewRobot("bill", 1, 1, "green") 
@@ -85,21 +88,24 @@ def demo():
    count -= 1
    print("Fred looks forward at", fred.look()[2]) # element 2 is forward view 
    print("Bill looks forward at", bill.look()[2])
+~~~
 
 Note, if you load either the "Demo.map" or Test.map world into tthe simulator, the grobot.demo() will demonstrate the options and return values from the robot methods (functions). You can also import and use the grobot module (program) from the interactive shell and try out the commands interactively, e.g.:
 
-     import grobot grobot.demo() 
-     fred = grobot.NewRobot("fred", 5, 5, "red") 
-     fred.look() -> "wall" 
-     fred.forward() "Bang" fred.init() ->  "OK"
-
+~~~
+  import grobot grobot.demo() 
+  fred = grobot.NewRobot("fred", 5, 5, "red") 
+  fred.look() -> "wall" 
+  fred.forward() "Bang" fred.init() ->  "OK"
+~~~
 
 Note, if you load either the "Demo.map" or Test.map world into tthe simulator, the grobot.demo() will demonstrate the options and return values from the robot methods (functions). You can also import and use the grobot module (program) from the interactive shell and try out the commands interactively, e.g.:
 
-        import grobot 
-        grobot.demo() 
-        fred = grobot.NewRobot("fred", 5, 5, "red") 
-        fred.look() -> "wall" 
-        fred.forward() -> "Bang" 
-        fred.init() -> "OK"
-
+~~~
+  import grobot 
+  grobot.demo() 
+  fred = grobot.NewRobot("fred", 5, 5, "red") 
+  fred.look() -> "wall" 
+  fred.forward() -> "Bang" 
+  fred.init() -> "OK"
+~~~
