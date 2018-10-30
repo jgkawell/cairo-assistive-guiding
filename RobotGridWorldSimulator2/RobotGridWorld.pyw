@@ -443,7 +443,7 @@ class GridRobotSim(tk.Tk):
                     val = [(self.world[posx][posy+1], posx, posy+1), (self.world[posx][posy+2], posx, posy+2),
                         (self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2), (self.world[posx+2][posy+1], posx+2, posy+1)]
                 elif heading == 180 and posx >= 0: #West
-                    val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)
+                    val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1),
                         (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
                 elif heading == 270 and posy >= 0:# South
                     val = [(self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy),
