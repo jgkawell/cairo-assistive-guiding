@@ -27,4 +27,5 @@ while msg!="q" and msg!="Q":
     if msg == "l" or msg == "L": robot.left()
     if msg == "r" or msg == "R": robot.right()
     if msg == "i" or msg == "I": robot.init()
+    robot.look()
 exit()

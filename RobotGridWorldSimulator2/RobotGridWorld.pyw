@@ -66,6 +66,7 @@ class GridRobotSim(tk.Tk):
         self.gridspace=20
         self.mapsize=30
         self.world=[[None]* (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.explored = [[False]* (self.mapsize+3) for i in range(self.mapsize+3)] #unexplored map
         #print(self.world) #debug
         self.robots={} # Mutiple named robots?
         self.shp=[]# Robot shapes list
@@ -177,11 +178,15 @@ class GridRobotSim(tk.Tk):
         #print ("World dims = ", len(self.world), len(self.world[0]))#debug
         for ix in range(0,len(self.world)-1):
             for iy in range(0,len(self.world[ix])-1):
-                if self.world[ix+1][iy+1] != None:
-                    #print(ix, iy, self.world[ix][iy])# debug
-                    self.fillGrid(ix, iy)
-                else:
-                    self.clearGrid(ix,iy)
+                self.fillGrid(ix, iy)
+                #old code
+                # if self.world[ix+1][iy+1] != None:
+                #     #print(ix, iy, self.world[ix][iy])# debug
+                #     self.fillGrid(ix, iy)
+                # else:
+                #     self.clearGrid(ix,iy)
+
+
 
 
     def editGrid(self, mousex, mousey):
@@ -202,6 +207,14 @@ class GridRobotSim(tk.Tk):
         self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                 self.xtoMap(x)+8, self.ytoMap(y),
                                  fill="grey", width=19, tag=tagstr)
+
+    def fillGridWall(self, x, y):
+        print("HelloOOOoOooO")
+        #tagstr[str(x)+"u"+str(y), "RedWall"]
+        #print("**"+tagstr+"**", self.world[x+1][y+1]) # debug
+        self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                self.xtoMap(x)+8, self.ytoMap(y),
+                                 fill="red", width=19)
 
     def clearGrid(self, x, y):
         tagstr=str(x)+"u"+str(y)
@@ -258,6 +271,7 @@ class GridRobotSim(tk.Tk):
                 #print("New Style Map")#debug
                 self.world = newworld
             self.drawWorld()
+
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
         if robname == "None":
@@ -319,6 +333,18 @@ class GridRobotSim(tk.Tk):
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
                 self.world[posx+1][posy+1]=rname # update to world to show robot
+                blocks = self.look2(rname)
+                for block in blocks:
+                    px, py = block[1], block[2]
+                    if self.world[px][py] == None and self.explored[px][py] == False:
+                        self.explored[px][py] = True
+                        self.clearGrid(px-1, py-1) #probably b/c indexing for clear grid and self.world is different
+                    elif self.world[px][py] != None and self.explored[px][py] == False:
+                        self.explored[px][py] = True
+                        print("Found wall", px-1, py-1)
+                        self.fillGridWall(px-1, py-1)
+                        print("filled it red")
+
                 return "OK"
             else:
                 # If not clear (None), then collision
@@ -402,6 +428,38 @@ class GridRobotSim(tk.Tk):
                 return val
             else:
                 return ["Broken", "Broken", "Broken", "Broken", "Broken"]
+        return "Robot name not found"
+
+    def look2(self, rname):
+        if rname in self.robots :
+            if self.robotStates[rname]!="Broken":
+                posx = self.maptoX(self.robots[rname].xcor())
+                posy = self.maptoY(self.robots[rname].ycor())
+                heading=int(self.robots[rname].heading())
+                #print(rname, posx, posy, heading) # debug
+
+                if heading == 0 and posx <31: #East
+                    val = [(self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2),
+                        (self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy)]
+                elif heading == 90 and posy <31: #North
+                    val = [(self.world[posx][posy+1], posx, posy+1), (self.world[posx][posy+2], posx, posy+2),
+                        (self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2), (self.world[posx+2][posy+1], posx+2, posy+1)]
+                elif heading == 180 and posx >= 0: #West
+                    val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)
+                        (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
+                elif heading == 270 and posy >= 0:# South
+                    val = [(self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy),
+                        (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)]
+                else:
+                    #print("Edge of world")#debug
+                    # Facing edge of world
+                    val==[("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0)]
+
+                #print("world val = ", val)# debug
+                #if val == None: val = "None"
+                return val
+            else:
+                return [("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1)]
         return "Robot name not found"
 
 
@@ -505,5 +563,3 @@ class GridRobotSim(tk.Tk):
 if __name__ == '__main__':
     GRSApp = GridRobotSim()
     GRSApp.mainloop()
-
-
