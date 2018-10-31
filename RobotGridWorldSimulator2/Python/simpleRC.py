@@ -22,10 +22,10 @@ robot=NewRobot("robot", colour="yellow")
 
 msg=""
 while msg!="q" and msg!="Q":
-    msg = input("Type: F=Forward, R=Turn Right, L = Turn Left. The press RETURN: ")
-    if msg == "f" or msg == "F": robot.forward()
-    if msg == "l" or msg == "L": robot.left()
-    if msg == "r" or msg == "R": robot.right()
+    msg = input("Type: W=Forward, D=Turn Right, A = Turn Left. The press RETURN: ")
+    if msg == "w" or msg == "W": robot.forward()
+    if msg == "a" or msg == "A": robot.left()
+    if msg == "d" or msg == "D": robot.right()
     if msg == "i" or msg == "I": robot.init()
     robot.look()
 exit()
