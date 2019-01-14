@@ -307,7 +307,9 @@ class GridRobotSim(tk.Tk):
 
     def moveForward(self, rname):
         if rname in self.robots and self.robotStates[rname]!="Broken":
-            if self.look(rname)[2][0] == None:# Clear to move
+
+            #  check to see if forward is clear
+            if self.look(rname)[2][0] == None: # Clear to move
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
 
@@ -321,10 +323,10 @@ class GridRobotSim(tk.Tk):
 
                 return "OK"
             else:
-                # If not clear (None), then collision
-                self.robots[rname].shape("circle")
-                self.robotStates[rname]="Broken" # Out of order!
-                return "Bang"
+                # If not clear (None), then don't move                
+                print("Cannot move forward")
+                return "OK"
+
         elif self.robotStates[rname]!="Broken":
             return "Broken"
         else:
@@ -397,7 +399,7 @@ class GridRobotSim(tk.Tk):
     def tcpServer(self):
         """
         TCIP server, opens a TC IP socket and passes the message on to be executed and
-        waits for input from the TCIP socket and pases it on to despatch() for
+        waits for input from the TCIP socket and pases it on to dispatch() for
         evaluation. If "q" input, ends connection, "Q" input ends server.
         """
         #variables
@@ -430,7 +432,7 @@ class GridRobotSim(tk.Tk):
             cli_sock, cli_ipAdd = tcpSock.accept()
             try:
                 # python 3
-                thrd=Thread(target = self.despatch, args = (cli_sock,))
+                thrd=Thread(target = self.dispatch, args = (cli_sock,))
                 thrd.daemon = True
                 thrd.start()
             except:
@@ -442,16 +444,16 @@ class GridRobotSim(tk.Tk):
         print("Server closed")
 
 
-    def despatch(self, cli_sock):
+    def dispatch(self, cli_sock):
+        # message variables
         msg = ""
         rmsg = ""
+
         # Recive input and pass to eval
-        # print("Connected") # Debug
         msg=cli_sock.recv(50).decode('utf-8')
-        print("*"+msg)#debug
+
         if (msg != "Q"):
             msg = msg.split() # parse
-            #for i in msg: print(i) #debug
 
             # Do robot commands
             try:
@@ -478,12 +480,12 @@ class GridRobotSim(tk.Tk):
 
             if rmsg == None:
                 rmsg == "None"
-            #print(rmsg, type(rmsg))# debug
+
             # Wait here for step timer
             while self.wait==True:
                 sleep(0.01)
             cli_sock.send(str(rmsg).encode('utf-8'))
-        #print("Connection Closed")# debug
+
         cli_sock.close()
         return
 
