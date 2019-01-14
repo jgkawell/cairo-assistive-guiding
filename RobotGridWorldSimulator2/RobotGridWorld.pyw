@@ -172,33 +172,51 @@ class GridRobotSim(tk.Tk):
         # Draw filled grids squares
         for ix in range(0,len(self.world)-1):
             for iy in range(0,len(self.world[ix])-1):
-                self.fillGrid(ix, iy)
-
-
-
+                self.fillGrid(ix, iy, "None")
 
     def editGrid(self, mousex, mousey):
         x=self.maptoX(mousex)
         y=self.maptoY(mousey)
+        cell_type = self.world[x+1][y+1]
         
-        if self.world[x+1][y+1] == None:
+        if cell_type == None:
             # Make wall (etc.?)
-            self.fillGrid(x, y)
+            self.fillGrid(x, y, "Wall")
             self.world[x+1][y+1] = "Wall"
+        elif cell_type == "Wall":
+            # Make hazard
+            self.fillGrid(x, y, "Hazard")
+            self.world[x+1][y+1] = "Hazard"
+        elif cell_type == "Hazard":
+            # Make reward
+            self.fillGrid(x, y, "Reward")
+            self.world[x+1][y+1] = "Reward"
         else: #Clear grid square
             self.clearGrid(x, y)
             self.world[x+1][y+1] = None
 
-    def fillGrid(self, x, y):
-        tagstr=[str(x)+"u"+str(y), "walls"]
-        self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                self.xtoMap(x)+8, self.ytoMap(y),
-                                 fill="grey", width=19, tag=tagstr)
+    def fillGrid(self, x, y, cell_type):
+        if cell_type == "None":
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="grey", width=19)
+        elif cell_type == "Wall":
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="blue", width=19)
+        elif cell_type == "Hazard":
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="red", width=19)
+        elif cell_type == "Reward":
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="green", width=19)
 
     def fillGridWall(self, x, y):
         self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                 self.xtoMap(x)+8, self.ytoMap(y),
-                                 fill="red", width=19)
+                                fill="blue", width=19)
 
     def clearGrid(self, x, y):
         tagstr=str(x)+"u"+str(y)
