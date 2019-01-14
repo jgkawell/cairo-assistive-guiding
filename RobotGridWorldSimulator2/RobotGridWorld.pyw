@@ -209,7 +209,6 @@ class GridRobotSim(tk.Tk):
                                  fill="grey", width=19, tag=tagstr)
 
     def fillGridWall(self, x, y):
-        print("HelloOOOoOooO")
         #tagstr[str(x)+"u"+str(y), "RedWall"]
         #print("**"+tagstr+"**", self.world[x+1][y+1]) # debug
         self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
@@ -325,7 +324,7 @@ class GridRobotSim(tk.Tk):
 
     def moveForward(self, rname):
         if rname in self.robots and self.robotStates[rname]!="Broken":
-            if self.look(rname)[2]==None:# Clear to move
+            if self.look(rname)[2][0] == None:# Clear to move
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
 
@@ -335,7 +334,7 @@ class GridRobotSim(tk.Tk):
                 posy = self.maptoY(self.robots[rname].ycor())
                 self.world[posx+1][posy+1]=rname # update to world to show robot
 
-                self.look2(rname) #
+                self.look(rname) #
 
                 return "OK"
             else:
@@ -353,7 +352,7 @@ class GridRobotSim(tk.Tk):
             if self.robotStates[rname]!="Broken":
                 self.robots[rname].left(90)
 
-                self.look2(rname)
+                self.look(rname)
 
                 return "OK"
             else:
@@ -365,7 +364,7 @@ class GridRobotSim(tk.Tk):
             if self.robotStates[rname]!="Broken":
                 self.robots[rname].right(90)
 
-                self.look2(rname)
+                self.look(rname)
 
                 return "OK"
             else:
@@ -373,64 +372,8 @@ class GridRobotSim(tk.Tk):
         return "Robot name not found"
 
     def look(self, rname):
-        if rname in self.robots :
-            if self.robotStates[rname]!="Broken":
-                posx = self.maptoX(self.robots[rname].xcor())
-                posy = self.maptoY(self.robots[rname].ycor())
-                heading=int(self.robots[rname].heading())
-                #print(rname, posx, posy, heading) # debug
-
-                if heading == 0 and posx <31: #East
-                    val = [self.world[posx+1][posy+2],self.world[posx+2][posy+2],
-                        self.world[posx+2][posy+1], self.world[posx+2][posy], self.world[posx+1][posy]]
-                elif heading == 90 and posy <31: #North
-                    val = [self.world[posx][posy+1], self.world[posx][posy+2],
-                        self.world[posx+1][posy+2], self.world[posx+2][posy+2], self.world[posx+2][posy+1]]
-                elif heading == 180 and posx >= 0: #West
-                    val = [self.world[posx+1][posy],self.world[posx][posy],
-                        self.world[posx][posy+1], self.world[posx][posy+2],self.world[posx+1][posy+2]]
-                elif heading == 270 and posy >= 0:# South
-                    val = [self.world[posx+2][posy+1], self.world[posx+2][posy],
-                        self.world[posx+1][posy], self.world[posx][posy], self.world[posx][posy+1]]
-                else:
-                    #print("Edge of world")#debug
-                    # Facing edge of world
-                    val==["Wall", "Wall", "Wall", "Wall", "Wall"]
-                    """
-                    if heading == 0: #East edge
-                        if posy<30: #Not upper right corner
-                            val[0] = self.world[posx][posy+1]
-                        elif posy>0: # Not lower left corner
-                            val[4] = self.world[posx][posy-1]
-
-                    elif heading == 180:# West edge
-                        if posy<30: # Not Upper Right corner
-                            val[4] = self.world[posx][posy+1]
-                        elif posy>0: # Not Lower rightcorner
-                            val[0] = self.world[posx][posy-1]
-
-                    elif heading == 90: #North edge
-                        if posx<30: # Not Upper Right corner
-                            val[4] = self.world[posx+1][posy]
-                        elif posx>0: # Not Upper Left Corner
-                            val[0] = self.world[posx-1][posy]
-
-                    else: # South edge
-                        if posx<30: #Not lower left corner
-                            val[0] = self.world[posx+1][posy]
-                        elif posx>0: # Not lower right corner
-                            val[4] = self.world[posx-1][posy]
-                    """
-                #print("world val = ", val)# debug
-                #if val == None: val = "None"
-                return val
-            else:
-                return ["Broken", "Broken", "Broken", "Broken", "Broken"]
-        return "Robot name not found"
-
-    def look2(self, rname):
-        if rname in self.robots :
-            if self.robotStates[rname]!="Broken":
+        if rname in self.robots:
+            if self.robotStates[rname] != "Broken":
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
                 heading=int(self.robots[rname].heading())
@@ -445,16 +388,12 @@ class GridRobotSim(tk.Tk):
                 elif heading == 180 and posx >= 0: #West
                     val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1),
                         (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
-                elif heading == 270 and posy >= 0:# South
+                elif heading == 270 and posy >= 0:#South
                     val = [(self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy),
                         (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)]
                 else:
-                    #print("Edge of world")#debug
                     # Facing edge of world
-                    val==[("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0)]
-
-                #print("world val = ", val)# debug
-                #if val == None: val = "None"
+                    val == [("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0)]
 
                 for block in val:
                     px, py = block[1], block[2]
@@ -465,11 +404,11 @@ class GridRobotSim(tk.Tk):
                         self.explored[px][py] = True
                         print("Found wall", px-1, py-1)
                         self.fillGridWall(px-1, py-1)
-                        print("filled it red")
 
                 return val
             else:
                 return [("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1)]
+
         return "Robot name not found"
 
 
