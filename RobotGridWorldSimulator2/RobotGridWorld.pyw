@@ -120,19 +120,15 @@ class GridRobotSim(tk.Tk):
             sleep(0.3-self.delay/50)
             self.wait=False
             sleep(0.05)
-            # Bug fix - Jamie Hollaway
             # Stops window freezing when not in focus
             self.update()
             self.update_idletasks()
-            #print(self.wait, self.delay)
 
     def simSpeed(self, event):
         self.delay=self.speedSlider.get()
-        #print(self.delay)
 
     def toggleTrails(self):
         # Work in progress!
-        #print("ToggleTrails")# debug
         for robname in self.robots:
             if self.trails == True:
                 print("OFF")
@@ -166,7 +162,6 @@ class GridRobotSim(tk.Tk):
 
         # Set boundary walls: 0,0 to 31,31
         mapsize = len(self.world)-1
-        #print(mapsize) # debug
         for n in range(0,mapsize ):
             self.world[0][n]="Wall"
             self.world[mapsize][n]="Wall"
@@ -175,16 +170,9 @@ class GridRobotSim(tk.Tk):
         self.world[mapsize][mapsize] = "Wall"
 
         # Draw filled grids squares
-        #print ("World dims = ", len(self.world), len(self.world[0]))#debug
         for ix in range(0,len(self.world)-1):
             for iy in range(0,len(self.world[ix])-1):
                 self.fillGrid(ix, iy)
-                #old code
-                # if self.world[ix+1][iy+1] != None:
-                #     #print(ix, iy, self.world[ix][iy])# debug
-                #     self.fillGrid(ix, iy)
-                # else:
-                #     self.clearGrid(ix,iy)
 
 
 
@@ -192,7 +180,7 @@ class GridRobotSim(tk.Tk):
     def editGrid(self, mousex, mousey):
         x=self.maptoX(mousex)
         y=self.maptoY(mousey)
-        #print("EditGrid", mousex, mousey, x, y, self.world[x][y])# Debug
+        
         if self.world[x+1][y+1] == None:
             # Make wall (etc.?)
             self.fillGrid(x, y)
@@ -203,14 +191,11 @@ class GridRobotSim(tk.Tk):
 
     def fillGrid(self, x, y):
         tagstr=[str(x)+"u"+str(y), "walls"]
-        #print("**"+tagstr+"**", self.world[x+1][y+1]) # debug
         self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                 self.xtoMap(x)+8, self.ytoMap(y),
                                  fill="grey", width=19, tag=tagstr)
 
     def fillGridWall(self, x, y):
-        #tagstr[str(x)+"u"+str(y), "RedWall"]
-        #print("**"+tagstr+"**", self.world[x+1][y+1]) # debug
         self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                 self.xtoMap(x)+8, self.ytoMap(y),
                                  fill="red", width=19)
@@ -250,13 +235,12 @@ class GridRobotSim(tk.Tk):
 
     def loadWorld(self):
         filename=fd.askopenfilename(filetypes=[("Map Files","*.map")], initialdir="./Maps/")
-        #print(filename)# debug
+        
         if filename != "":
             if filename[-4:] != ".map": filename += ".map"
             newworld=pickle.load(open(filename, 'rb'))
             if len(newworld)<32: # Old style or part map
                 # map onto new style map
-                #print("Old Style Map")
                 self.world=[[None]* (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
                 dx = 1
                 for ix in newworld:
@@ -267,7 +251,6 @@ class GridRobotSim(tk.Tk):
                         dy += 1
                     dx +=1
             else:
-                #print("New Style Map")#debug
                 self.world = newworld
 
             self.explored = [[False]* (self.mapsize+3) for i in range(self.mapsize+3)] #reset unexplored map
@@ -377,7 +360,6 @@ class GridRobotSim(tk.Tk):
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
                 heading=int(self.robots[rname].heading())
-                #print(rname, posx, posy, heading) # debug
 
                 if heading == 0 and posx <31: #East
                     val = [(self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2),
@@ -419,9 +401,6 @@ class GridRobotSim(tk.Tk):
         evaluation. If "q" input, ends connection, "Q" input ends server.
         """
         #variables
-        msg = ""
-        rmsg = ""
-        passw=""
         tcpSock=None
         tcpOk=0
         try:
@@ -446,7 +425,6 @@ class GridRobotSim(tk.Tk):
         #make sure socket closes at eop
         atexit.register(tcpSock.close)
         atexit.register(tcpSock.shutdown, 1)
-        msg=""
         while tcpOk==1:
             # when customer calls, service requests
             cli_sock, cli_ipAdd = tcpSock.accept()
