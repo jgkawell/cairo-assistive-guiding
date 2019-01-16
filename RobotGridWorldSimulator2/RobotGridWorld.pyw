@@ -172,7 +172,7 @@ class GridRobotSim(tk.Tk):
         # Draw filled grids squares
         for ix in range(0,len(self.world)-1):
             for iy in range(0,len(self.world[ix])-1):
-                self.fillGrid(ix, iy, "None")
+                self.fillGrid(ix, iy, "Fog")
 
     def editGrid(self, mousex, mousey):
         x=self.maptoX(mousex)
@@ -180,6 +180,10 @@ class GridRobotSim(tk.Tk):
         cell_type = self.world[x+1][y+1]
         
         if cell_type == None:
+            # Make wall (etc.?)
+            self.fillGrid(x, y, "Fog")
+            self.world[x+1][y+1] = "Fog"
+        elif cell_type == "Fog":
             # Make wall (etc.?)
             self.fillGrid(x, y, "Wall")
             self.world[x+1][y+1] = "Wall"
@@ -191,12 +195,17 @@ class GridRobotSim(tk.Tk):
             # Make reward
             self.fillGrid(x, y, "Reward")
             self.world[x+1][y+1] = "Reward"
-        else: #Clear grid square
-            self.clearGrid(x, y)
+        else:
+            # Make wall (etc.?)
+            self.fillGrid(x, y, None)
             self.world[x+1][y+1] = None
 
     def fillGrid(self, x, y, cell_type):
-        if cell_type == "None":
+        if cell_type == None:
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="white", width=19)
+        if cell_type == "Fog":
             self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                     self.xtoMap(x)+8, self.ytoMap(y),
                                     fill="grey", width=19)
@@ -212,11 +221,6 @@ class GridRobotSim(tk.Tk):
             self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                     self.xtoMap(x)+8, self.ytoMap(y),
                                     fill="green", width=19)
-
-    def fillGridWall(self, x, y):
-        self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                self.xtoMap(x)+8, self.ytoMap(y),
-                                fill="blue", width=19)
 
     def clearGrid(self, x, y):
         tagstr=str(x)+"u"+str(y)
@@ -327,7 +331,7 @@ class GridRobotSim(tk.Tk):
         if rname in self.robots and self.robotStates[rname]!="Broken":
 
             #  check to see if forward is clear
-            if self.look(rname)[2][0] == None: # Clear to move
+            if self.look(rname)[2][0] != "Wall": # Clear to move
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
 
@@ -401,18 +405,17 @@ class GridRobotSim(tk.Tk):
                     px, py = block[1], block[2]
                     if self.world[px][py] == None and self.explored[px][py] == False:
                         self.explored[px][py] = True
-                        self.clearGrid(px-1, py-1) #probably b/c indexing for clear grid and self.world is different
+                        self.fillGrid(px-1, py-1, None) #probably b/c indexing for clear grid and self.world is different
                     elif self.world[px][py] != None and self.explored[px][py] == False:
                         self.explored[px][py] = True
-                        print("Found wall", px-1, py-1)
-                        self.fillGridWall(px-1, py-1)
+                        print("Found something at: ", px-1, py-1)
+                        self.fillGrid(px-1, py-1, self.world[px][py])
 
                 return val
             else:
                 return [("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1)]
 
         return "Robot name not found"
-
 
     def tcpServer(self):
         """
