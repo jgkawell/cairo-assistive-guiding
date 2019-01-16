@@ -33,9 +33,9 @@
 # Python 2 and 3 compatibility
 from __future__ import absolute_import, division, print_function
 try:
-      input=raw_input # Python 3 style input()
+    input = raw_input  # Python 3 style input()
 except:
-      pass
+    pass
 
 try:
     # Python 3 tkinter
@@ -44,10 +44,10 @@ try:
     import tkinter.messagebox as mb
 
 except:
-      # Else Python 2 Tkinter
-      import Tkinter as tk
-      import tkFileDialog as fd
-      import tkMessageBox as mb
+    # Else Python 2 Tkinter
+    import Tkinter as tk
+    import tkFileDialog as fd
+    import tkMessageBox as mb
 
 # Standard imports
 from threading import Thread
@@ -61,71 +61,73 @@ import atexit
 class GridRobotSim(tk.Tk):
     # Just one big class!
     def __init__(self, master=None):
-        self.frmht=622
-        self.frmwt=622
-        self.gridspace=20
-        self.mapsize=30
-        self.world=[[None]* (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
-        self.explored = [[False]* (self.mapsize+3) for i in range(self.mapsize+3)] #unexplored map
-        #print(self.world) #debug
-        self.robots={} # Mutiple named robots?
-        self.shp=[]# Robot shapes list
-        self.robotStates={} # Internal states of robots
-        self.trails=False # Trails off to start with
+        self.frmht = 622
+        self.frmwt = 622
+        self.gridspace = 20
+        self.mapsize = 30
+        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.explored = [[False] * (self.mapsize+3) for i in range(self.mapsize+3)]  # unexplored map
+        self.robots = {}  # Mutiple named robots?
+        self.shp = []  # Robot shapes list
+        self.robotStates = {}  # Internal states of robots
+        self.trails = False  # Trails off to start with
         tk.Tk.__init__(self, master)
         tk.Tk.title(self, "RoboGridWorld V2")
 
         # drawing canvas in frame to include turtle graphics
         self.frame = tk.Frame(master, bg="black", borderwidth=3)
         self.frame.pack()
-        self.canvas = tk.Canvas(self.frame,  height = self.frmht, width = self.frmwt, bg="white")
+        self.canvas = tk.Canvas(self.frame,  height=self.frmht, width=self.frmwt, bg="white")
         self.canvas.pack()
 
         # Buttons under canvas area
-        self.newButton=tk.Button(master, text="New Map", command = lambda : self.newWorld())
+        self.newButton = tk.Button(master, text="New Map", command=lambda: self.newWorld())
         self.newButton.pack(side=tk.LEFT)
-        self.loadButton=tk.Button(master, text="Load Map", command = lambda : self.loadWorld())
+        self.loadButton = tk.Button(master, text="Load Map", command=lambda: self.loadWorld())
         self.loadButton.pack(side=tk.LEFT)
-        self.saveButton=tk.Button(master, text="Save Map", command = lambda : self.saveWorld())
+        self.saveButton = tk.Button(master, text="Save Map", command=lambda: self.saveWorld())
         self.saveButton.pack(side=tk.LEFT)
-        self.trailButton=tk.Button(master, text="Toggle Trails", command = lambda : self.toggleTrails())
+        self.trailButton = tk.Button(master, text="Toggle Trails", command=lambda: self.toggleTrails())
         self.trailButton.pack(side=tk.RIGHT)
-        self.speedSlider=tk.Scale(master,from_=1, to=10, orient=tk.HORIZONTAL, command=self.simSpeed)
+        self.speedSlider = tk.Scale(master, from_=1, to=10, orient=tk.HORIZONTAL, command=self.simSpeed)
         self.speedSlider.set(5)
         self.speedSlider.pack(side=tk.RIGHT)
-        self.speedLabel=tk.Label(text="Speed")
+        self.speedLabel = tk.Label(text="Speed")
         self.speedLabel.pack(side=tk.RIGHT)
+        
         # Add dummy turtle as hidden to set up drawing area
-        self.robot1=rbt.RawTurtle(self.canvas) # changes canvas coords! (0,0) now in middle
+        # changes canvas coords! (0,0) now in middle
+        self.robot1 = rbt.RawTurtle(self.canvas)
         self.robot1.hideturtle()
+
         # Handler for mouse clicks
-        self.screen=self.robot1.getscreen()
-        self.screen.onclick(self.editGrid, btn=1) # Mouse left button
+        self.screen = self.robot1.getscreen()
+        self.screen.onclick(self.editGrid, btn=1)  # Mouse left button
 
         self.drawWorld()
 
         # Start server for robot programs to connect
-        self.tcpTrd=Thread(target=self.tcpServer)
+        self.tcpTrd = Thread(target=self.tcpServer)
         self.tcpTrd.daemon = True
         self.tcpTrd.start()
 
         # Start timer for simulation speed
-        self.timerTrd=Thread(target=self.simtimer)
+        self.timerTrd = Thread(target=self.simtimer)
         self.timerTrd.daemon = True
         self.timerTrd.start()
 
     def simtimer(self):
         while True:
-            self.wait=True
+            self.wait = True
             sleep(0.3-self.delay/50)
-            self.wait=False
+            self.wait = False
             sleep(0.05)
             # Stops window freezing when not in focus
             self.update()
             self.update_idletasks()
 
     def simSpeed(self, event):
-        self.delay=self.speedSlider.get()
+        self.delay = self.speedSlider.get()
 
     def toggleTrails(self):
         # Work in progress!
@@ -137,48 +139,54 @@ class GridRobotSim(tk.Tk):
             else:
                 print("ON")
                 self.robots[robname].pendown()
-        if self.trails==True:
-            self.trails=False
+        if self.trails == True:
+            self.trails = False
         else:
-            self.trails=True
-
+            self.trails = True
 
     def drawWorld(self):
         # Draws the grid and labels
         # XYaxis lines, labels
+        
         # Vertical lines
         self.canvas.delete("all")
-        count=0
-        for i in range(-self.frmht//2, self.frmht//2-1, self.gridspace ):
-                self.canvas.create_line(i, self.frmht//2, i, -self.frmwt//2, dash=(2,4))
-                self.canvas.create_text(i+10, self.frmht//2-10, text=str(count), font=("courier", 6), fill="red")
-                count += 1
+        count = 0
+        for i in range(-self.frmht//2, self.frmht//2-1, self.gridspace):
+            self.canvas.create_line(
+                i, self.frmht//2, i, -self.frmwt//2, dash=(2, 4))
+            self.canvas.create_text(
+                i+10, self.frmht//2-10, text=str(count), font=("courier", 6), fill="red")
+            count += 1
+
         # Horizontal lines
-        count=self.frmht//self.gridspace
-        for i in range(-self.frmwt//2, self.frmwt//2-1,self.gridspace ):
-                self.canvas.create_line(-self.frmwt//2,i, self.frmht//2, i, dash=(2,4))
-                self.canvas.create_text(-self.frmwt//2+10, i+12, text=str(int(count-1)), font=("courier", 6), fill="red")
-                count -= 1
+        count = self.frmht//self.gridspace
+        for i in range(-self.frmwt//2, self.frmwt//2-1, self.gridspace):
+            self.canvas.create_line(-self.frmwt//2, i,
+                                    self.frmht//2, i, dash=(2, 4))
+            self.canvas.create_text(-self.frmwt//2+10, i+12,
+                                    text=str(int(count-1)), font=("courier", 6), fill="red")
+            count -= 1
 
         # Set boundary walls: 0,0 to 31,31
         mapsize = len(self.world)-1
-        for n in range(0,mapsize ):
-            self.world[0][n]="Wall"
-            self.world[mapsize][n]="Wall"
-            self.world[n][0]="Wall"
-            self.world[n][mapsize]="Wall"
+        for n in range(0, mapsize):
+            self.world[0][n] = "Wall"
+            self.world[mapsize][n] = "Wall"
+            self.world[n][0] = "Wall"
+            self.world[n][mapsize] = "Wall"
+
         self.world[mapsize][mapsize] = "Wall"
 
         # Draw filled grids squares
-        for ix in range(0,len(self.world)-1):
-            for iy in range(0,len(self.world[ix])-1):
+        for ix in range(0, len(self.world)-1):
+            for iy in range(0, len(self.world[ix])-1):
                 self.fillGrid(ix, iy, "Fog")
 
     def editGrid(self, mousex, mousey):
-        x=self.maptoX(mousex)
-        y=self.maptoY(mousey)
+        x = self.maptoX(mousex)
+        y = self.maptoY(mousey)
         cell_type = self.world[x+1][y+1]
-        
+
         if cell_type == None:
             # Make wall (etc.?)
             self.fillGrid(x, y, "Fog")
@@ -223,7 +231,7 @@ class GridRobotSim(tk.Tk):
                                     fill="green", width=19)
 
     def clearGrid(self, x, y):
-        tagstr=str(x)+"u"+str(y)
+        tagstr = str(x)+"u"+str(y)
         self.canvas.delete(tagstr)
 
     def xtoMap(self, x=0):
@@ -232,77 +240,88 @@ class GridRobotSim(tk.Tk):
     def ytoMap(self, y=0):
         return int(self.frmwt//2 - 12 - y * self.gridspace)
 
-    def maptoX (self, mapx=0):
+    def maptoX(self, mapx=0):
         return int((mapx + self.frmwt//2) // self.gridspace)
 
     def maptoY(self, mapy=0):
-        return int(self.mapsize - (mapy - self.frmht//2 ) // -self.gridspace)
+        return int(self.mapsize - (mapy - self.frmht//2) // -self.gridspace)
 
     def newWorld(self):
         # print("NewMAp")
-        self.world=[[None]* (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
         self.drawWorld()
 
     def saveWorld(self):
-        # print("SaveMAp")
-        filename = fd.asksaveasfilename(filetypes=[("Map Files","*.map")], initialdir=".")
+        filename = fd.asksaveasfilename(filetypes=[("Map Files", "*.map")], initialdir=".")
         if filename != None:
             # remove robots from world!
             for robname in list(self.robots.keys()):
-                xpos,ypos=self.getXYpos(robname)
-                self.world[xpos+1][ypos+1]=None
+                xpos, ypos = self.getXYpos(robname)
+                self.world[xpos+1][ypos+1] = None
+
             # Then save!
-            if filename[-4:] != ".map": filename += ".map"
-            pickle.dump(self.world, open(filename, 'wb'),2) # Protocol 2 for python 2 compatilbility
+            if filename[-4:] != ".map":
+                filename += ".map"
+
+            # Protocol 2 for python 2 compatilbility
+            pickle.dump(self.world, open(filename, 'wb'), 2)
 
     def loadWorld(self):
-        filename=fd.askopenfilename(filetypes=[("Map Files","*.map")], initialdir="./Maps/")
-        
+        filename = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="./Maps/")
+
         if filename != "":
-            if filename[-4:] != ".map": filename += ".map"
-            newworld=pickle.load(open(filename, 'rb'))
-            if len(newworld)<32: # Old style or part map
+            if filename[-4:] != ".map":
+                filename += ".map"
+
+            newworld = pickle.load(open(filename, 'rb'))
+            if len(newworld) < 32:  # Old style or part map
                 # map onto new style map
-                self.world=[[None]* (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
+                self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
                 dx = 1
                 for ix in newworld:
-                    dy=1
+                    dy = 1
                     for iy in ix:
-                        #print(dx, dy)#debug
+                        # print(dx, dy)#debug
                         self.world[dx][dy] = iy
                         dy += 1
-                    dx +=1
+                    dx += 1
             else:
                 self.world = newworld
 
-            self.explored = [[False]* (self.mapsize+3) for i in range(self.mapsize+3)] #reset unexplored map
+            # reset unexplored map
+            self.explored = [[False] * (self.mapsize+3) for i in range(self.mapsize+3)]
             self.drawWorld()
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
         if robname == "None":
             # create/use Anonymous robot. Can only do one!
             robname = "anon"
+
         if not robname in self.robots:
-            self.robots[robname]=rbt.RawTurtle(self.canvas)
+            self.robots[robname] = rbt.RawTurtle(self.canvas)
         else:
             # Remove "old" robot from World
-           self.world[self.maptoX(self.robots[robname].xcor())+1] [self.maptoY(self.robots[robname].ycor())+1] = None
+            self.world[self.maptoX(self.robots[robname].xcor(
+            ))+1][self.maptoY(self.robots[robname].ycor())+1] = None
+            
         # Robot shape/colour
-        if rshape == "None": # Can provide own shape def
+        if rshape == "None":  # Can provide own shape def
             # Otherwise use standard robot shape
             self.shp.append(rbt.Shape("compound"))
-            #print(self.shp, len(self.shp)-1)# debug
-            poly1 = ((0,0),(10,-5),(0,10),(-10,-5))
+            # print(self.shp, len(self.shp)-1)# debug
+            poly1 = ((0, 0), (10, -5), (0, 10), (-10, -5))
             self.shp[len(self.shp)-1].addcomponent(poly1, colour, "black")
-            poly2 = ((0,0),(10,-5),(-10,-5))
+            poly2 = ((0, 0), (10, -5), (-10, -5))
             self.shp[len(self.shp)-1].addcomponent(poly2, "black", colour)
-            self.screen.register_shape(robname+"shape", self.shp[len(self.shp)-1])
+            self.screen.register_shape(
+                robname+"shape", self.shp[len(self.shp)-1])
         else:
             # Can use standard shape  “arrow”, “turtle”, “circle”,
             # “square”, “triangle”, “classic”
             self.robots[robname].shape(rshape)
+
         # Initalise robot
-        self.robotStates[robname]=0
+        self.robotStates[robname] = 0
         self.robots[robname].hideturtle()
         self.robots[robname].pencolor(colour)
         self.robots[robname].clear()
@@ -312,14 +331,17 @@ class GridRobotSim(tk.Tk):
         self.robots[robname].goto(self.xtoMap(posx)-3, self.ytoMap(self.mapsize-posy)+2)
         self.robots[robname].setheading(90)
         self.robots[robname].showturtle()
+
         if self.trails == True:
             self.robots[robname].clear()
             self.robots[robname].pendown()
         else:
             self.robots[robname].penup()
             self.robots[robname].clear()
+
         self.robots[robname].speed(2)
-        self.world[posx+1][posy+1]=robname
+        self.world[posx+1][posy+1] = robname
+
         return "OK"
 
     def getXYpos(self, robname):
@@ -328,54 +350,53 @@ class GridRobotSim(tk.Tk):
         return (posx, posy)
 
     def moveForward(self, rname):
-        if rname in self.robots and self.robotStates[rname]!="Broken":
+        if rname in self.robots and self.robotStates[rname] != "Broken":
 
             #  check to see if forward is clear
-            if self.look(rname)[2][0] != "Wall": # Clear to move
+            if self.look(rname)[2][0] != "Wall":  # Clear to move
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
 
-                self.world[posx+1][posy+1]=None # Clear robot from world
-                self.robots[rname].forward(20) # move to next grid square
+                self.world[posx+1][posy+1] = None  # Clear robot from world
+                self.robots[rname].forward(20)  # move to next grid square
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
-                self.world[posx+1][posy+1]=rname # update to world to show robot
+                # update to world to show robot
+                self.world[posx+1][posy+1] = rname
 
-                self.look(rname) #
+                self.look(rname)
 
                 return "OK"
             else:
-                # If not clear (None), then don't move                
+                # If not clear (None), then don't move
                 print("Cannot move forward")
                 return "OK"
 
-        elif self.robotStates[rname]!="Broken":
+        elif self.robotStates[rname] != "Broken":
             return "Broken"
         else:
             return "Error"
 
     def turnLeft(self, rname):
         if rname in self.robots:
-            if self.robotStates[rname]!="Broken":
+            if self.robotStates[rname] != "Broken":
                 self.robots[rname].left(90)
-
                 self.look(rname)
-
                 return "OK"
             else:
                 return "Broken"
+
         return "Robot name not found"
 
     def turnRight(self, rname):
         if rname in self.robots:
-            if self.robotStates[rname]!="Broken":
+            if self.robotStates[rname] != "Broken":
                 self.robots[rname].right(90)
-
                 self.look(rname)
-
                 return "OK"
             else:
                 return "Broken"
+
         return "Robot name not found"
 
     def look(self, rname):
@@ -383,37 +404,37 @@ class GridRobotSim(tk.Tk):
             if self.robotStates[rname] != "Broken":
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
-                heading=int(self.robots[rname].heading())
+                heading = int(self.robots[rname].heading())
 
-                if heading == 0 and posx <31: #East
+                if heading == 0 and posx < 31:  # East
                     val = [(self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2),
-                        (self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy)]
-                elif heading == 90 and posy <31: #North
+                           (self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy)]
+                elif heading == 90 and posy < 31:  # North
                     val = [(self.world[posx][posy+1], posx, posy+1), (self.world[posx][posy+2], posx, posy+2),
-                        (self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2), (self.world[posx+2][posy+1], posx+2, posy+1)]
-                elif heading == 180 and posx >= 0: #West
+                           (self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2), (self.world[posx+2][posy+1], posx+2, posy+1)]
+                elif heading == 180 and posx >= 0:  # West
                     val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1),
-                        (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
-                elif heading == 270 and posy >= 0:#South
+                           (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
+                elif heading == 270 and posy >= 0:  # South
                     val = [(self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy),
-                        (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)]
+                           (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)]
                 else:
                     # Facing edge of world
-                    val == [("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0), ("Wall",0,0)]
+                    val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
 
                 for block in val:
                     px, py = block[1], block[2]
                     if self.world[px][py] == None and self.explored[px][py] == False:
                         self.explored[px][py] = True
-                        self.fillGrid(px-1, py-1, None) #probably b/c indexing for clear grid and self.world is different
+                        # probably b/c indexing for clear grid and self.world is different
+                        self.fillGrid(px-1, py-1, None)
                     elif self.world[px][py] != None and self.explored[px][py] == False:
                         self.explored[px][py] = True
-                        print("Found something at: ", px-1, py-1)
                         self.fillGrid(px-1, py-1, self.world[px][py])
 
                 return val
             else:
-                return [("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1), ("Broken",-1,-1)]
+                return [("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1)]
 
         return "Robot name not found"
 
@@ -423,47 +444,50 @@ class GridRobotSim(tk.Tk):
         waits for input from the TCIP socket and pases it on to dispatch() for
         evaluation. If "q" input, ends connection, "Q" input ends server.
         """
-        #variables
-        tcpSock=None
-        tcpOk=0
+        # variables
+        tcpSock = None
+        tcpOk = 0
         try:
             # Create IP socket and wait for customers
-            tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcpSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except:
             print("Error creating socket")
         print("Please wait: Binding address to socket")
+
         # Bug fix for Mac - C ontributed by Jamie Hollaway
         tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        msgtext=tk.Label(self.frame, text="Please Wait: Setting up Connection", bg="red")
+        msgtext = tk.Label(
+            self.frame, text="Please Wait: Setting up Connection", bg="red")
         msgtext.pack(side=tk.TOP)
-        while tcpOk==0:
+        while tcpOk == 0:
             try:
-                tcpSock.bind(("localhost",9001))
+                tcpSock.bind(("localhost", 9001))
                 tcpSock.listen(3)
-                tcpOk=1
+                tcpOk = 1
             except:
-                sleep(1.0) # Keep trying!
+                sleep(1.0)  # Keep trying!
         print("Socket ready now")
         msgtext.destroy()
-        #make sure socket closes at eop
+
+        # make sure socket closes at eop
         atexit.register(tcpSock.close)
         atexit.register(tcpSock.shutdown, 1)
-        while tcpOk==1:
+        while tcpOk == 1:
             # when customer calls, service requests
             cli_sock, cli_ipAdd = tcpSock.accept()
             try:
                 # python 3
-                thrd=Thread(target = self.dispatch, args = (cli_sock,))
+                thrd = Thread(target=self.dispatch, args=(cli_sock,))
                 thrd.daemon = True
                 thrd.start()
             except:
-                #raise # debug
-                print("Warning TCP/IP Error") # Just keep on with next request
+                # raise # debug
+                print("Warning TCP/IP Error")  # Just keep on with next request
+
         # Clean up if this point ever reached
         tcpSock.shutdown(1)
         tcpSock.close()
         print("Server closed")
-
 
     def dispatch(self, cli_sock):
         # message variables
@@ -471,44 +495,47 @@ class GridRobotSim(tk.Tk):
         rmsg = ""
 
         # Recive input and pass to eval
-        msg=cli_sock.recv(50).decode('utf-8')
+        msg = cli_sock.recv(50).decode('utf-8')
 
         if (msg != "Q"):
-            msg = msg.split() # parse
+            msg = msg.split()  # parse
 
             # Do robot commands
             try:
-                if msg[0]=="N":
-                    #print(msg) #debug
+                if msg[0] == "N":
+                    # print(msg) #debug
                     # New or init robot
-                    rmsg = self.newRobot(msg[1], int(msg[2]), int(msg[3]), msg[4], msg[5])
-                elif msg[0]=="F":
+                    rmsg = self.newRobot(msg[1], int(
+                        msg[2]), int(msg[3]), msg[4], msg[5])
+                elif msg[0] == "F":
                     # msg[1] is robot name
                     rmsg = self.moveForward(msg[1])
-                elif msg[0]=="R":
+                elif msg[0] == "R":
                     rmsg = self.turnRight(msg[1])
-                elif msg[0]=="L":
+                elif msg[0] == "L":
                     rmsg = self.turnLeft(msg[1])
                 elif msg[0] == "S":
                     rmsg = str(self.look(msg[1]))
-                elif msg[0]=="P":
+                elif msg[0] == "P":
                     rmsg = self.getXYpos(msg[1])
                 else:
-                    rmsg="Unknown command"
+                    rmsg = "Unknown command"
             except:
-                #raise #debug. If error just carry on
+                # raise #debug. If error just carry on
                 rmsg = "Server Error"
 
             if rmsg == None:
                 rmsg == "None"
 
             # Wait here for step timer
-            while self.wait==True:
+            while self.wait == True:
                 sleep(0.01)
+                
             cli_sock.send(str(rmsg).encode('utf-8'))
 
         cli_sock.close()
         return
+
 
 if __name__ == '__main__':
     GRSApp = GridRobotSim()
