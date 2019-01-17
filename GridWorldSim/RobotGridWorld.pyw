@@ -188,11 +188,11 @@ class GridRobotSim(tk.Tk):
         cell_type = self.world[x+1][y+1]
 
         if cell_type == None:
-            # Make wall (etc.?)
+            # Make Fog
             self.fillGrid(x, y, "Fog")
             self.world[x+1][y+1] = "Fog"
         elif cell_type == "Fog":
-            # Make wall (etc.?)
+            # Make wall
             self.fillGrid(x, y, "Wall")
             self.world[x+1][y+1] = "Wall"
         elif cell_type == "Wall":
@@ -203,6 +203,10 @@ class GridRobotSim(tk.Tk):
             # Make reward
             self.fillGrid(x, y, "Reward")
             self.world[x+1][y+1] = "Reward"
+        elif cell_type == "Reward":
+            # Make door
+            self.fillGrid(x, y, "Door")
+            self.world[x+1][y+1] = "Door"
         else:
             # Make wall (etc.?)
             self.fillGrid(x, y, None)
@@ -229,6 +233,10 @@ class GridRobotSim(tk.Tk):
             self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
                                     self.xtoMap(x)+8, self.ytoMap(y),
                                     fill="green", width=19)
+        elif cell_type == "Door":
+            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
+                                    self.xtoMap(x)+8, self.ytoMap(y),
+                                    fill="purple", width=19)
 
     def clearGrid(self, x, y):
         tagstr = str(x)+"u"+str(y)
