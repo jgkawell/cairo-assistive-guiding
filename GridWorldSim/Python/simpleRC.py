@@ -23,7 +23,7 @@ from grobot import *
 
 # Initialise a new GRobot
 
-robot = NewRobot("robot", colour="yellow")
+robot = NewRobot("simpleRC", colour="yellow")
 # You can call your robot any name you want!
 # Normal Python variable rules apply (no spaces, chars aA-zZ, etc.)
 # Colours can be: “red”, “green”, “blue”, “orange” etc.

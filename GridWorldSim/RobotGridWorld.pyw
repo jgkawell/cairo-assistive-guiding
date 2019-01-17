@@ -180,7 +180,7 @@ class GridRobotSim(tk.Tk):
         # Draw filled grids squares
         for ix in range(0, len(self.world)-1):
             for iy in range(0, len(self.world[ix])-1):
-                self.fillGrid(ix, iy, "Fog")
+                self.fillGrid(ix, iy, self.world[ix][iy])
 
     def editGrid(self, mousex, mousey):
         x = self.maptoX(mousex)
@@ -247,7 +247,6 @@ class GridRobotSim(tk.Tk):
         return int(self.mapsize - (mapy - self.frmht//2) // -self.gridspace)
 
     def newWorld(self):
-        # print("NewMAp")
         self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
         self.drawWorld()
 
@@ -361,9 +360,9 @@ class GridRobotSim(tk.Tk):
                 self.robots[rname].forward(20)  # move to next grid square
                 posx = self.maptoX(self.robots[rname].xcor())
                 posy = self.maptoY(self.robots[rname].ycor())
+
                 # update to world to show robot
                 self.world[posx+1][posy+1] = rname
-
                 self.look(rname)
 
                 return "OK"

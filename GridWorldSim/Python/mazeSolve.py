@@ -14,7 +14,7 @@ except:
 
 # Initialise a new GRobot
 from grobot import *
-robot=NewRobot("robot", colour="blue")
+robot=NewRobot("mazeSolve", colour="blue")
 
 msg=[] # Create an empty list to receive robot.look() data
 print ("Press Ctrl C to Stop")
@@ -24,10 +24,10 @@ while True:
     try:
         msg = robot.look()
         #input("Press RETURN to cont.")
-        if msg[4] == None:
+        if msg[4][0] == None:
             robot.right()
             robot.forward()
-        elif msg[2] == None:
+        elif msg[2][0] == None:
             robot.forward()
         else:
             robot.left()
