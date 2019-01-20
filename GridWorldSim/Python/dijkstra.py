@@ -52,7 +52,7 @@ def dijkstra(graph):
     v_source = graph.get_vertex(0)
     v_source.dist = 0
     visited = 0
-    while visited < mapsize**2 - graph.num_walls:
+    while visited < mapsize**2 - graph.num_walls: #vertices denoted "wall" don't get added to any adj_list, so subtract 'wall' tiles from vertices we need to visit
         visited += 1
         min_vertex = min_dist(graph)
         min_vertex.visited = True
@@ -63,6 +63,7 @@ def dijkstra(graph):
                 if min_vertex.dist + 1 < cur_dist:
                     neighbor.parent = min_vertex.key
                     neighbor.dist = min_vertex.dist + 1
+    #store shortest path from start to vertex 99 (top rightmost cell, for testing) and return
     trace = [99]
     vertex = graph.get_vertex(99)
     parent = vertex.parent
@@ -83,10 +84,10 @@ if __name__ == "__main__":
     G.num_walls += 1
     for i in range(mapsize**2):
         v_cur = G.get_vertex(i)
-        if v_cur.cell_type != "Wall":
-            if i % mapsize != mapsize-1 and G.get_vertex(i+1).cell_type != "Wall": G.add_edge(i, i+1) #right
-            if i % mapsize != 0 and G.get_vertex(i-1).cell_type != "Wall": G.add_edge(i, i-1) #left
-            if i + mapsize < mapsize**2 and G.get_vertex(i+mapsize).cell_type != "Wall": G.add_edge(i, i+mapsize) #tile above
-            if i - mapsize > 0 and G.get_vertex(i-mapsize).cell_type != "Wall": G.add_edge(i, i-mapsize) #tile below
+        if v_cur.cell_type != "Wall": # 'i' rows by 'j' columns, key = mapsize * i + j
+            if i % mapsize != mapsize-1 and G.get_vertex(i+1).cell_type != "Wall": G.add_edge(i, i+1) #try to add cell to the right
+            if i % mapsize != 0 and G.get_vertex(i-1).cell_type != "Wall": G.add_edge(i, i-1) #cell to the left
+            if i + mapsize < mapsize**2 and G.get_vertex(i+mapsize).cell_type != "Wall": G.add_edge(i, i+mapsize) #cell above
+            if i - mapsize > 0 and G.get_vertex(i-mapsize).cell_type != "Wall": G.add_edge(i, i-mapsize) #cell below
     trace = dijkstra(G)
     print(trace, len(trace))
