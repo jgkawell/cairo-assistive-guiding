@@ -74,6 +74,9 @@ class GridRobotSim(tk.Tk):
         tk.Tk.__init__(self, master)
         tk.Tk.title(self, "RoboGridWorld V2")
 
+        # Options for visuals
+        self.fogWorld = False
+
         # drawing canvas in frame to include turtle graphics
         self.frame = tk.Frame(master, bg="black", borderwidth=3)
         self.frame.pack()
@@ -180,7 +183,10 @@ class GridRobotSim(tk.Tk):
         # Draw filled grids squares
         for ix in range(0, len(self.world)-1):
             for iy in range(0, len(self.world[ix])-1):
-                self.fillGrid(ix, iy, self.world[ix][iy])
+                if self.fogWorld:
+                    self.fillGrid(ix, iy, "Fog")
+                else:                    
+                    self.fillGrid(ix, iy, self.world[ix+1][iy+1])
 
     def editGrid(self, mousex, mousey):
         x = self.maptoX(mousex)
@@ -296,7 +302,11 @@ class GridRobotSim(tk.Tk):
                 self.world = newworld
 
             # reset unexplored map
-            self.explored = [[False] * (self.mapsize+3) for i in range(self.mapsize+3)]
+            exploredValue = True
+            if self.fogWorld:
+                exploredValue = False
+
+            self.explored = [[exploredValue] * (self.mapsize+3) for i in range(self.mapsize+3)]
             self.drawWorld()
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
@@ -431,12 +441,9 @@ class GridRobotSim(tk.Tk):
 
                 for block in val:
                     px, py = block[1], block[2]
-                    if self.world[px][py] == None and self.explored[px][py] == False:
+                    if self.explored[px][py] == False:
                         self.explored[px][py] = True
                         # probably b/c indexing for clear grid and self.world is different
-                        self.fillGrid(px-1, py-1, None)
-                    elif self.world[px][py] != None and self.explored[px][py] == False:
-                        self.explored[px][py] = True
                         self.fillGrid(px-1, py-1, self.world[px][py])
 
                 return val
