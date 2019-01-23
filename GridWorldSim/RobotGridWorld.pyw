@@ -72,7 +72,7 @@ class GridRobotSim(tk.Tk):
         self.robotStates = {}  # Internal states of robots
         self.trails = False  # Trails off to start with
         tk.Tk.__init__(self, master)
-        tk.Tk.title(self, "RoboGridWorld V2")
+        tk.Tk.title(self, "Robot Grid World")
 
         # Options for visuals
         self.fogWorld = False
