@@ -229,9 +229,6 @@ class GRobot():
             print("Please make sure Simulator is running")
             exit()
 
-        #self.tcpSock.shutdown(socket.SHUT_RDWR)
-        #self.tcpSock.close()
-        #print(rmsg)# Debug
         return rmsg
 
     def init(self, xpos=1, ypos=1):
@@ -246,11 +243,7 @@ class GRobot():
         return self._send("L " + self.rname+" ")
 
     def look(self):
-        
-        ##return 
-         #eval(
         msg = self._send("S " + self.rname)
-        print(msg)
         return eval(msg)
 
     def forward(self):
@@ -260,8 +253,8 @@ class GRobot():
 
 def demo():
     # print() used to show return value from method/function calls
-    fred=NewRobot("fred", 1, 1)
-    bill=NewRobot("bill", 1, 1, "green")
+    fred=GRobot("fred", 1, 1)
+    bill=GRobot("bill", 1, 1, "green")
     print("Fred forward", fred.forward())
     print("Bill forward",bill.forward())
     print("Fred right", fred.right())
@@ -279,8 +272,8 @@ def demo():
     print("Bill looks forward at", bill.look()[2])
 
 def demo2():
-    arthur=NewRobot("arthur", 1, 4, "blue")
-    ted=NewRobot("ted", 4, 4, "yellow")
+    arthur=GRobot("arthur", 1, 4, "blue")
+    ted=GRobot("ted", 4, 4, "yellow")
     print("Arthur forward", arthur.forward())
     print("Ted forward",ted.forward())
     print("Arthur right", arthur.right())
