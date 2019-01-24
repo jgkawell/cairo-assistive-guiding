@@ -14,7 +14,7 @@ curses.cbreak()
 screen.keypad(True)
 
 # Setup imports
-from grobot import *
+from grobot import GRobot
 import pickle
 
 # Initialise globals
@@ -24,6 +24,13 @@ mapsize = 30
 
 # Import map for data
 world = pickle.load(open(defaultWorld, 'rb'))
+
+# Erase hazards from memory
+# TODO: We will need to modify this to remove random rewards as well
+for i in range(0, mapsize):
+    for j in range(0, mapsize):
+        if world[i][j] == "Hazard":
+            world[i][j] = None
 
 try:
     while True:
@@ -47,6 +54,7 @@ try:
             cells.append((world[x][y], x, y))
             
         # print out values from look and from world (note they are the same)
+        screen.erase()
         screen.addstr(0, 0, str(result))
         screen.addstr(1, 0, str(cells))
 finally:
