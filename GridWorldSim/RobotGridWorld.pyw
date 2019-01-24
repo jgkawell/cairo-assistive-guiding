@@ -65,7 +65,6 @@ class GridRobotSim(tk.Tk):
         self.frmwt = 622
         self.gridspace = 20
         self.mapsize = 30
-        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
         self.explored = [[False] * (self.mapsize+3) for i in range(self.mapsize+3)]  # unexplored map
         self.robots = {}  # Mutiple named robots?
         self.shp = []  # Robot shapes list
@@ -75,7 +74,7 @@ class GridRobotSim(tk.Tk):
         tk.Tk.title(self, "Robot Grid World")
 
         # Options for visuals
-        self.fogWorld = False
+        self.fogWorld = False # True=begin with greyed out world, False=show full world
 
         # drawing canvas in frame to include turtle graphics
         self.frame = tk.Frame(master, bg="black", borderwidth=3)
@@ -107,7 +106,10 @@ class GridRobotSim(tk.Tk):
         self.screen = self.robot1.getscreen()
         self.screen.onclick(self.editGrid, btn=1)  # Mouse left button
 
-        self.drawWorld()
+        # Initialize default world
+        self.defaultWorld = "./Maps/MazeExtra.map"
+        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.openWorld(self.defaultWorld)
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -286,28 +288,30 @@ class GridRobotSim(tk.Tk):
             if filename[-4:] != ".map":
                 filename += ".map"
 
-            newworld = pickle.load(open(filename, 'rb'))
-            if len(newworld) < 32:  # Old style or part map
-                # map onto new style map
-                self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
-                dx = 1
-                for ix in newworld:
-                    dy = 1
-                    for iy in ix:
-                        # print(dx, dy)#debug
-                        self.world[dx][dy] = iy
-                        dy += 1
-                    dx += 1
-            else:
-                self.world = newworld
+            self.openWorld(filename)
 
-            # reset unexplored map
-            exploredValue = True
-            if self.fogWorld:
-                exploredValue = False
+    def openWorld(self, filename):
+        newworld = pickle.load(open(filename, 'rb'))
+        if len(newworld) < 32:  # Old style or part map
+            # map onto new style map
+            self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
+            dx = 1
+            for ix in newworld:
+                dy = 1
+                for iy in ix:
+                    self.world[dx][dy] = iy
+                    dy += 1
+                dx += 1
+        else:
+            self.world = newworld
 
-            self.explored = [[exploredValue] * (self.mapsize+3) for i in range(self.mapsize+3)]
-            self.drawWorld()
+        # reset unexplored map
+        exploredValue = True
+        if self.fogWorld:
+            exploredValue = False
+
+        self.explored = [[exploredValue] * (self.mapsize+3) for i in range(self.mapsize+3)]
+        self.drawWorld()
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
         if robname == "None":
