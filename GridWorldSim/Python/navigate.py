@@ -14,7 +14,7 @@ except:
 
 # Initialise a new GRobot
 from grobot import *
-robot=NewRobot("robot", colour="blue")
+robot=GRobot("robot", colour="blue")
 
 msg=[] # Create an empty list to receive robot.look() data
 print ("Press Ctrl C to Stop")

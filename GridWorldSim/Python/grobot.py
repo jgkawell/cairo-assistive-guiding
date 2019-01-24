@@ -187,7 +187,7 @@ port = 9001          # Possibility of various clients running own robots
                      # in the simulator in future?
 
 
-class NewRobot():
+class GRobot():
 
     def __init__(self, rname="anon", posx=1, posy=1, colour="red", rshape="None"):
         self.rname=rname
