@@ -64,8 +64,6 @@ class GridRobotSim(tk.Tk):
         self.frmht = 622
         self.frmwt = 622
         self.gridspace = 20
-        self.mapsize = 30
-        self.explored = [[False] * (self.mapsize+3) for i in range(self.mapsize+3)]  # unexplored map
         self.robots = {}  # Mutiple named robots?
         self.shp = []  # Robot shapes list
         self.robotStates = {}  # Internal states of robots
@@ -108,7 +106,9 @@ class GridRobotSim(tk.Tk):
 
         # Initialize default world
         self.defaultWorld = "./Maps/MazeExtra.map"
-        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.defaultMapSize = 30
+        self.explored = [[False] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # unexplored map
+        self.world = [[None] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # World map
         self.openWorld(self.defaultWorld)
 
         # Start server for robot programs to connect
@@ -172,53 +172,43 @@ class GridRobotSim(tk.Tk):
                                     text=str(int(count-1)), font=("courier", 6), fill="red")
             count -= 1
 
-        # Set boundary walls: 0,0 to 31,31
-        mapsize = len(self.world)-1
-        for n in range(0, mapsize):
-            self.world[0][n] = "Wall"
-            self.world[mapsize][n] = "Wall"
-            self.world[n][0] = "Wall"
-            self.world[n][mapsize] = "Wall"
-
-        self.world[mapsize][mapsize] = "Wall"
-
         # Draw filled grids squares
-        for ix in range(0, len(self.world)-1):
-            for iy in range(0, len(self.world[ix])-1):
+        for i in range(0, self.mapsize):
+            for j in range(0, self.mapsize):
                 if self.fogWorld:
-                    self.fillGrid(ix, iy, "Fog")
+                    self.fillGrid(i, j, "Fog")
                 else:                    
-                    self.fillGrid(ix, iy, self.world[ix+1][iy+1])
+                    self.fillGrid(i, j, self.world[i][j])
 
     def editGrid(self, mousex, mousey):
         x = self.maptoX(mousex)
         y = self.maptoY(mousey)
-        cell_type = self.world[x+1][y+1]
+        cell_type = self.world[x][y]
 
         if cell_type == None:
             # Make Fog
             self.fillGrid(x, y, "Fog")
-            self.world[x+1][y+1] = "Fog"
+            self.world[x][y] = "Fog"
         elif cell_type == "Fog":
             # Make wall
             self.fillGrid(x, y, "Wall")
-            self.world[x+1][y+1] = "Wall"
+            self.world[x][y] = "Wall"
         elif cell_type == "Wall":
             # Make hazard
             self.fillGrid(x, y, "Hazard")
-            self.world[x+1][y+1] = "Hazard"
+            self.world[x][y] = "Hazard"
         elif cell_type == "Hazard":
             # Make reward
             self.fillGrid(x, y, "Reward")
-            self.world[x+1][y+1] = "Reward"
+            self.world[x][y] = "Reward"
         elif cell_type == "Reward":
             # Make door
             self.fillGrid(x, y, "Door")
-            self.world[x+1][y+1] = "Door"
+            self.world[x][y] = "Door"
         else:
             # Make wall (etc.?)
             self.fillGrid(x, y, None)
-            self.world[x+1][y+1] = None
+            self.world[x][y] = None
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -260,10 +250,10 @@ class GridRobotSim(tk.Tk):
         return int((mapx + self.frmwt//2) // self.gridspace)
 
     def maptoY(self, mapy=0):
-        return int(self.mapsize - (mapy - self.frmht//2) // -self.gridspace)
+        return int(self.mapsize - 1 - (mapy - self.frmht//2) // -self.gridspace)
 
     def newWorld(self):
-        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
+        self.world = [[None] * (self.mapsize+1) for i in range(self.mapsize+1)]  # World map
         self.drawWorld()
 
     def saveWorld(self):
@@ -272,7 +262,7 @@ class GridRobotSim(tk.Tk):
             # remove robots from world!
             for robname in list(self.robots.keys()):
                 xpos, ypos = self.getXYpos(robname)
-                self.world[xpos+1][ypos+1] = None
+                self.world[xpos][ypos] = None
 
             # Then save!
             if filename[-4:] != ".map":
@@ -292,25 +282,19 @@ class GridRobotSim(tk.Tk):
 
     def openWorld(self, filename):
         newworld = pickle.load(open(filename, 'rb'))
-        if len(newworld) < 32:  # Old style or part map
-            # map onto new style map
-            self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # Clear World map
-            dx = 1
-            for ix in newworld:
-                dy = 1
-                for iy in ix:
-                    self.world[dx][dy] = iy
-                    dy += 1
-                dx += 1
-        else:
-            self.world = newworld
+        
+        # take out the buffer walls
+        self.mapsize = len(newworld) - 2
+        for i in range(self.mapsize):
+            for j in range(self.mapsize):
+                self.world[i][j] = newworld[i+1][j+1]
 
         # reset unexplored map
         exploredValue = True
         if self.fogWorld:
             exploredValue = False
 
-        self.explored = [[exploredValue] * (self.mapsize+3) for i in range(self.mapsize+3)]
+        self.explored = [[exploredValue] * (self.mapsize) for i in range(self.mapsize)]
         self.drawWorld()
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
@@ -323,7 +307,7 @@ class GridRobotSim(tk.Tk):
         else:
             # Remove "old" robot from World
             self.world[self.maptoX(self.robots[robname].xcor(
-            ))+1][self.maptoY(self.robots[robname].ycor())+1] = None
+            ))][self.maptoY(self.robots[robname].ycor())] = None
             
         # Robot shape/colour
         if rshape == "None":  # Can provide own shape def
@@ -349,7 +333,7 @@ class GridRobotSim(tk.Tk):
         self.robots[robname].penup()
         self.robots[robname].shape(robname+"shape")
         self.robots[robname].speed(0)
-        self.robots[robname].goto(self.xtoMap(posx)-3, self.ytoMap(self.mapsize-posy)+2)
+        self.robots[robname].goto(self.xtoMap(posx)-2, self.ytoMap(self.mapsize-posy)+1)
         self.robots[robname].setheading(90)
         self.robots[robname].showturtle()
 
@@ -361,7 +345,7 @@ class GridRobotSim(tk.Tk):
             self.robots[robname].clear()
 
         self.robots[robname].speed(2)
-        self.world[posx+1][posy+1] = robname
+        self.world[posx][posy] = robname
 
         return "OK"
 
@@ -371,90 +355,81 @@ class GridRobotSim(tk.Tk):
         return (posx, posy)
 
     def moveForward(self, rname):
-        if rname in self.robots and self.robotStates[rname] != "Broken":
+        #  check to see if forward is clear
+        if self.look(rname)[2][0] != "Wall":  # Clear to move
+            posx = self.maptoX(self.robots[rname].xcor())
+            posy = self.maptoY(self.robots[rname].ycor())
 
-            #  check to see if forward is clear
-            if self.look(rname)[2][0] != "Wall":  # Clear to move
-                posx = self.maptoX(self.robots[rname].xcor())
-                posy = self.maptoY(self.robots[rname].ycor())
+            self.world[posx][posy] = None  # Clear robot from world
+            self.robots[rname].forward(20)  # move to next grid square
+            posx = self.maptoX(self.robots[rname].xcor())
+            posy = self.maptoY(self.robots[rname].ycor())
 
-                self.world[posx+1][posy+1] = None  # Clear robot from world
-                self.robots[rname].forward(20)  # move to next grid square
-                posx = self.maptoX(self.robots[rname].xcor())
-                posy = self.maptoY(self.robots[rname].ycor())
+            # update to world to show robot
+            self.world[posx][posy] = rname
+            self.look(rname)
 
-                # update to world to show robot
-                self.world[posx+1][posy+1] = rname
-                self.look(rname)
-
-                return "OK"
-            else:
-                # If not clear (None), then don't move
-                print("Cannot move forward")
-                return "OK"
-
-        elif self.robotStates[rname] != "Broken":
-            return "Broken"
+            return "OK"
         else:
-            return "Error"
+            # If not clear (None), then don't move
+            print("Cannot move forward")
+            return "OK"
 
     def turnLeft(self, rname):
         if rname in self.robots:
-            if self.robotStates[rname] != "Broken":
-                self.robots[rname].left(90)
-                self.look(rname)
-                return "OK"
-            else:
-                return "Broken"
+            self.robots[rname].left(90)
+            self.look(rname)
+            return "OK"
 
         return "Robot name not found"
 
     def turnRight(self, rname):
         if rname in self.robots:
-            if self.robotStates[rname] != "Broken":
-                self.robots[rname].right(90)
-                self.look(rname)
-                return "OK"
-            else:
-                return "Broken"
+            self.robots[rname].right(90)
+            self.look(rname)
+            return "OK"
 
         return "Robot name not found"
 
     def look(self, rname):
         if rname in self.robots:
-            if self.robotStates[rname] != "Broken":
-                posx = self.maptoX(self.robots[rname].xcor())
-                posy = self.maptoY(self.robots[rname].ycor())
-                heading = int(self.robots[rname].heading())
+            posx = self.maptoX(self.robots[rname].xcor())
+            posy = self.maptoY(self.robots[rname].ycor())
+            heading = int(self.robots[rname].heading())
 
-                if heading == 0 and posx < 31:  # East
-                    val = [(self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2),
-                           (self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy)]
-                elif heading == 90 and posy < 31:  # North
-                    val = [(self.world[posx][posy+1], posx, posy+1), (self.world[posx][posy+2], posx, posy+2),
-                           (self.world[posx+1][posy+2], posx+1, posy+2), (self.world[posx+2][posy+2], posx+2, posy+2), (self.world[posx+2][posy+1], posx+2, posy+1)]
-                elif heading == 180 and posx >= 0:  # West
-                    val = [(self.world[posx+1][posy], posx+1, posy), (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1),
-                           (self.world[posx][posy+2], posx, posy+2), (self.world[posx+1][posy+2], posx+1, posy+2)]
-                elif heading == 270 and posy >= 0:  # South
-                    val = [(self.world[posx+2][posy+1], posx+2, posy+1), (self.world[posx+2][posy], posx+2, posy), (self.world[posx+1][posy], posx+1, posy),
-                           (self.world[posx][posy], posx, posy), (self.world[posx][posy+1], posx, posy+1)]
-                else:
-                    # Facing edge of world
-                    val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
-
-                for block in val:
-                    px, py = block[1], block[2]
-                    if self.explored[px][py] == False:
-                        self.explored[px][py] = True
-                        # probably b/c indexing for clear grid and self.world is different
-                        self.fillGrid(px-1, py-1, self.world[px][py])
-
-                return val
+            if heading == 0 and posx < self.mapsize:  # East
+                val = [self.getValue(posx, posy+1), self.getValue(posx+1, posy+1),
+                        self.getValue(posx+1, posy), self.getValue(posx+1, posy-1), self.getValue(posx, posy-1)]
+            elif heading == 90 and posy < self.mapsize:  # North
+                val = [self.getValue(posx-1, posy), self.getValue(posx-1, posy+1),
+                        self.getValue(posx, posy+1), self.getValue(posx+1, posy+1), self.getValue(posx+1, posy)]
+            elif heading == 180 and posx >= 0:  # West
+                val = [self.getValue(posx, posy-1), self.getValue(posx-1, posy-1),
+                        self.getValue(posx-1, posy), self.getValue(posx-1, posy+1), self.getValue(posx, posy+1)]
+            elif heading == 270 and posy >= 0:  # South
+                val = [self.getValue(posx+1, posy), self.getValue(posx+1, posy-1),
+                        self.getValue(posx, posy-1), self.getValue(posx-1, posy-1), self.getValue(posx-1, posy)]
             else:
-                return [("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1), ("Broken", -1, -1)]
+                # Facing edge of world
+                val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
+
+            for block in val:
+                px, py = block[1], block[2]
+                if self.explored[px][py] == False:
+                    self.explored[px][py] = True
+                    self.fillGrid(px, py, self.world[px][py])
+
+            return val
 
         return "Robot name not found"
+
+    def getValue(self, x, y):
+        if x < 0 or x >= self.mapsize:
+            return ("Wall", x, y)
+        elif y < 0 or y >= self.mapsize:
+            return ("Wall", x, y)
+        else:
+            return (self.world[x][y], x, y)
 
     def tcpServer(self):
         """
