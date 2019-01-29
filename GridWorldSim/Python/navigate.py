@@ -14,11 +14,14 @@ except:
 
 # Initialise a new GRobot
 from grobot import *
-robot=NewRobot("robot", colour="blue")
+robot=GRobot("robot", colour="blue")
 
 msg=[] # Create an empty list to receive robot.look() data
 print ("Press Ctrl C to Stop")
-
+class pos:
+    def __init__(self, x = 0, y = 0):
+    self.x = x
+    self.y = y
 
 while True:
     try:

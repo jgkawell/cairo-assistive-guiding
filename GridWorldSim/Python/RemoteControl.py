@@ -34,7 +34,7 @@ except:
 
 # Initialise a new GRobot
 from grobot import *
-robot=NewRobot()
+robot=GRobot()
 
 def updateLook():
    global msg 
