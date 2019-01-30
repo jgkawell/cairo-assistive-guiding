@@ -22,17 +22,24 @@ class DemoAgent():
     def __init__(self):
         # Initialise globals
         self.robot = GRobot("demoAgent", colour="yellow")
-        worldPath = "./../Maps/MazeExtra.map" # this must be the same as that used in RobotGridWorld.pyw (and any other agents operating together)
+        worldPath = "./../Maps/fullOffice.map" # this must be the same as that used in RobotGridWorld.pyw (and any other agents operating together)
 
         # import world
         newworld = pickle.load(open(worldPath, 'rb'))
-        self.mapsize = len(newworld) - 2
-        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
                 
-        # take out the buffer walls
-        for i in range(self.mapsize):
-            for j in range(self.mapsize):
-                self.world[i][j] = newworld[i+1][j+1]
+        # take out the buffer walls if old map
+        if len(newworld) == 33:
+            self.mapsize = len(newworld) - 2
+            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i+1][j+1]
+        else:
+            self.mapsize = len(newworld)
+            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i][j]
 
         # Erase hazards from memory
         # TODO: We will need to modify this to remove random rewards as well
