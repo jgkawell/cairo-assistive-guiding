@@ -5,6 +5,13 @@ try:
 except:
     pass
 
+try:
+    # Python 3 tkinter
+    import tkinter.filedialog as fd
+except:
+    # Else Python 2 Tkinter
+    import tkFileDialog as fd
+
 # Setup imports
 from grobot import GRobot
 from path_planning import *
@@ -17,7 +24,7 @@ class HumanAgent():
         self.robot = GRobot("HumanAgent", colour="yellow")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
-        worldPath = "./../Maps/fullOffice.map" # this must be the same as that used in RobotGridWorld.pyw (and any other agents operating together)
+        worldPath = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
 
         # import world
         newworld = pickle.load(open(worldPath, 'rb'))
@@ -43,6 +50,7 @@ class HumanAgent():
                 if self.world[i][j] == "Hazard":
                     self.world[i][j] = None
 
+
     def run(self):
         self.plan()
         self.move()
@@ -54,9 +62,9 @@ class HumanAgent():
         start = G.get_vertex(start_key)
         print("Start: 1, 0")
 
-        goal_key = G.get_key(29, 30)
+        goal_key = G.get_key(1, 15)
         goal = G.get_vertex(goal_key)
-        print("Goal: 29, 30")
+        print("Goal: 1, 15")
         t = a_star(G, start, goal)
         self.path = reversed(t)
 

@@ -5,6 +5,13 @@ try:
 except:
     pass
 
+try:
+    # Python 3 tkinter
+    import tkinter.filedialog as fd
+except:
+    # Else Python 2 Tkinter
+    import tkFileDialog as fd
+
 
 # Set up curses for key input (from https://www.codehaven.co.uk/using-arrow-keys-with-inputs-python/)
 import curses
@@ -22,7 +29,7 @@ class DemoAgent():
     def __init__(self):
         # Initialise globals
         self.robot = GRobot("demoAgent", colour="yellow")
-        worldPath = "./../Maps/fullOffice.map" # this must be the same as that used in RobotGridWorld.pyw (and any other agents operating together)
+        worldPath = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
 
         # import world
         newworld = pickle.load(open(worldPath, 'rb'))
