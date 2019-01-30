@@ -70,8 +70,6 @@ class Graph():
                 if i + mapsize < mapsize**2 and self.get_vertex(i+mapsize).cell_type != "Wall": self.add_edge(i, i+mapsize) #cell above
                 if i - mapsize > 0 and self.get_vertex(i-mapsize).cell_type != "Wall": self.add_edge(i, i-mapsize) #cell below
 
-
-
     def add_vertex(self, vertex):
         self.vertices[vertex.key] = vertex
 
@@ -80,6 +78,9 @@ class Graph():
 
     def get_vertices(self):
         return self.vertices.keys()
+
+    def get_key(self, x, y): 
+        return x + self.mapsize * y
 
     def __iter__(self):
         return self.vertices.value()
