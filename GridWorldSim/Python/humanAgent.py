@@ -5,6 +5,13 @@ try:
 except:
     pass
 
+try:
+    # Python 3 tkinter
+    import tkinter.filedialog as fd
+except:
+    # Else Python 2 Tkinter
+    import tkFileDialog as fd
+
 # Setup imports
 from grobot import GRobot
 from path_planning import *
@@ -17,17 +24,24 @@ class HumanAgent():
         self.robot = GRobot("HumanAgent", colour="yellow")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
-        worldPath = "./../Maps/MazeExtra.map" # this must be the same as that used in RobotGridWorld.pyw (and any other agents operating together)
+        worldPath = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
 
         # import world
         newworld = pickle.load(open(worldPath, 'rb'))
-        self.mapsize = len(newworld) - 2
-        self.world = [[None] * (self.mapsize+3) for i in range(self.mapsize+3)]  # World map
-                
-        # take out the buffer walls
-        for i in range(self.mapsize):
-            for j in range(self.mapsize):
-                self.world[i][j] = newworld[i+1][j+1]
+        
+        # take out the buffer walls if old map
+        if len(newworld) == 33:
+            self.mapsize = len(newworld) - 2
+            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i+1][j+1]
+        else:
+            self.mapsize = len(newworld)
+            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i][j]
 
         # Erase hazards from memory
         # TODO: We will need to modify this to remove random rewards as well
@@ -36,6 +50,7 @@ class HumanAgent():
                 if self.world[i][j] == "Hazard":
                     self.world[i][j] = None
 
+
     def run(self):
         self.plan()
         self.move()
@@ -43,10 +58,13 @@ class HumanAgent():
     def plan(self):
         #path plan with a*
         G = Graph(self.mapsize, self.world)
-        start = G.get_vertex(1 + self.mapsize*0)
-        print("Start: ", start.get_xy(self.mapsize))
-        goal = G.get_vertex(1 + self.mapsize*15) #goal pos for MazeExtra.map
-        print("Goal: ", goal.get_xy(self.mapsize))
+        start_key = G.get_key(1, 0)
+        start = G.get_vertex(start_key)
+        print("Start: 1, 0")
+
+        goal_key = G.get_key(1, 15)
+        goal = G.get_vertex(goal_key)
+        print("Goal: 1, 15")
         t = a_star(G, start, goal)
         self.path = reversed(t)
 

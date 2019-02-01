@@ -105,8 +105,8 @@ class GridRobotSim(tk.Tk):
         self.screen.onclick(self.editGrid, btn=1)  # Mouse left button
 
         # Initialize default world
-        self.defaultWorld = "./Maps/MazeExtra.map"
-        self.defaultMapSize = 30
+        self.defaultWorld = "./Maps/fullOffice.map"
+        self.defaultMapSize = 31
         self.explored = [[False] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # unexplored map
         self.world = [[None] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # World map
         self.openWorld(self.defaultWorld)
@@ -253,7 +253,8 @@ class GridRobotSim(tk.Tk):
         return int(self.mapsize - 1 - (mapy - self.frmht//2) // -self.gridspace)
 
     def newWorld(self):
-        self.world = [[None] * (self.mapsize+1) for i in range(self.mapsize+1)]  # World map
+        self.world = [[None] * (self.defaultMapSize) for i in range(self.defaultMapSize)]  # World map
+        self.mapsize = self.defaultMapSize
         self.drawWorld()
 
     def saveWorld(self):
@@ -283,11 +284,18 @@ class GridRobotSim(tk.Tk):
     def openWorld(self, filename):
         newworld = pickle.load(open(filename, 'rb'))
         
-        # take out the buffer walls
-        self.mapsize = len(newworld) - 2
-        for i in range(self.mapsize):
-            for j in range(self.mapsize):
-                self.world[i][j] = newworld[i+1][j+1]
+        # take out the buffer walls if old map
+        if len(newworld) == 33:
+            self.mapsize = len(newworld) - 2
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i+1][j+1]
+        else:
+            self.mapsize = len(newworld)
+            for i in range(self.mapsize):
+                for j in range(self.mapsize):
+                    self.world[i][j] = newworld[i][j]
+
 
         # reset unexplored map
         exploredValue = True
@@ -413,11 +421,11 @@ class GridRobotSim(tk.Tk):
                 # Facing edge of world
                 val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
 
-            for block in val:
-                px, py = block[1], block[2]
-                if self.explored[px][py] == False:
-                    self.explored[px][py] = True
-                    self.fillGrid(px, py, self.world[px][py])
+            # for block in val:
+            #     px, py = block[1], block[2]
+            #     if self.explored[px][py] == False:
+            #         self.explored[px][py] = True
+            #         self.fillGrid(px, py, self.world[px][py])
 
             return val
 
