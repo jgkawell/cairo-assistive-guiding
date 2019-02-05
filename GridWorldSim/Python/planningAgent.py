@@ -45,14 +45,29 @@ class PlanningAgent():
                     self.world[i][j] = new_world[i][j]
 
     def run(self):
+        self.G = Graph(self.world_size, self.world)
+
         self.plan()
         self.move()
 
     def plan(self):
-        self.simplifyWorld(level=0)
+        found_sol = False
+        
+        if not found_sol:
+            for i in range(5):
+                self.simplifyWorld(level=i)
 
     def simplifyWorld(self, level):
-        x = 0
+        finished = False
+        cur_vertex = self.G.get_vertex(0)
+        while not finished:
+            neighbors = cur_vertex.get_neighbors()
+            for key in neighbors:
+
+
+    def recurse(self, key):
+        
+                    
 
 
 
