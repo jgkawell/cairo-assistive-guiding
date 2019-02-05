@@ -58,7 +58,7 @@ import socket
 import atexit
 
 
-class GridRobotSim(tk.Tk):
+class GridWorldSim(tk.Tk):
     # Just one big class!
     def __init__(self, master=None):
         self.frmht = 622
@@ -539,5 +539,5 @@ class GridRobotSim(tk.Tk):
 
 
 if __name__ == '__main__':
-    GRSApp = GridRobotSim()
+    GRSApp = GridWorldSim()
     GRSApp.mainloop()
