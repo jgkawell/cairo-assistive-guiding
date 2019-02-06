@@ -45,7 +45,8 @@ class PlanningAgent():
                     self.world[i][j] = new_world[i][j]
 
     def run(self):
-        self.G = Graph(self.world_size, self.world)
+        self.G = Graph()
+        self.G.setup_graph(self.world, self.world_size)
 
         self.plan()
         self.move()
@@ -58,16 +59,39 @@ class PlanningAgent():
                 self.simplifyWorld(level=i)
 
     def simplifyWorld(self, level):
-        finished = False
-        cur_vertex = self.G.get_vertex(0)
-        while not finished:
-            neighbors = cur_vertex.get_neighbors()
-            for key in neighbors:
-
-
-    def recurse(self, key):
         
-                    
+        if level == 0:
+            # initialize empty graph
+            self.simple_graph = Graph()
+
+            # add vertices with a choice value > 2 (intersections)
+            for vertex in self.G.vertices:
+                if len(vertex.get_neighbors()) > 2:
+                    self.simple_graph.add_vertex(vertex)
+
+            # connect vertices with edges
+            for vertex in self.simple_graph.vertices:
+                neighbors = vertex.get_neighbors()
+                
+                for new_key in neighbors:
+                    self.recurse(cur_key, new_key)
+
+        elif level == 1:
+
+    def recurse(self, cur_key, new_key):
+        if key in self.simple_graph.get_vertices():
+            return self.G.get_vertex(new_key)
+        else:
+            neighbors = self.G.get_vertex(new_key).get_neighbors()
+            for key in neighbors:
+                if key != cur_key:
+                    return recurse(new_key, key)
+
+        
+
+
+
+        
 
 
 
