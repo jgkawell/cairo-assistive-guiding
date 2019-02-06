@@ -249,6 +249,9 @@ class GRobot():
     def forward(self):
         return self._send("F " + self.rname)
 
+    def modifyCell(self, x, y, cell_type):
+        return self._send("M " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)
+
 
 
 def demo():

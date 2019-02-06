@@ -102,7 +102,7 @@ class GridWorldSim(tk.Tk):
 
         # Handler for mouse clicks
         self.screen = self.robot1.getscreen()
-        self.screen.onclick(self.editGrid, btn=1)  # Mouse left button
+        self.screen.onclick(self.clickGrid, btn=1)  # Mouse left button
 
         # Initialize default world
         self.defaultWorld = "./Maps/fullOffice.map"
@@ -180,11 +180,12 @@ class GridWorldSim(tk.Tk):
                 else:                    
                     self.fillGrid(i, j, self.world[i][j])
 
-    def editGrid(self, mousex, mousey):
+    def clickGrid(self, mousex, mousey):
         x = self.maptoX(mousex)
         y = self.maptoY(mousey)
         cell_type = self.world[x][y]
 
+        # cycle through different cell values
         if cell_type == None:
             # Make Fog
             self.fillGrid(x, y, "Fog")
@@ -209,6 +210,12 @@ class GridWorldSim(tk.Tk):
             # Make wall (etc.?)
             self.fillGrid(x, y, None)
             self.world[x][y] = None
+            
+    def modifyCell(self, x, y, cell_type):
+        print("Modifying cell..." + cell_type)
+        self.fillGrid(x, y, cell_type)
+        self.world[x][y] = cell_type
+        self.drawWorld()
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -519,6 +526,8 @@ class GridWorldSim(tk.Tk):
                     rmsg = str(self.look(msg[1]))
                 elif msg[0] == "P":
                     rmsg = self.getXYpos(msg[1])
+                elif msg[0] == "M":
+                    rmsg = self.modifyCell(x=msg[2], y=msg[3], cell_type=msg[4])
                 else:
                     rmsg = "Unknown command"
             except:

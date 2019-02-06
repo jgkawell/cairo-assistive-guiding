@@ -1,9 +1,9 @@
 # Python 2 and 3 compatibility. Use Python 3 syntax
 from __future__ import absolute_import, division, print_function
-try:
-    input = raw_input  # Python 3 style input()
-except:
-    pass
+# try:
+#     input = raw_input  # Python 3 style input()
+# except:
+#     pass
 
 try:
     # Python 3 tkinter
@@ -55,14 +55,17 @@ class PlanningAgent():
         found_sol = False
         
         if not found_sol:
-            for i in range(1):
+            for i in range(5):
                 self.simplifyWorld(level=i)
 
 
         # show vertices marked as intersections
 
         for vertex in self.simple_graph:
-            print(vertex.get_xy(self.world_size))
+            x, y = vertex.get_xy(self.world_size)
+            self.robot.modifyCell(x, y, "Door")
+
+        self.robot.forward()
 
         # testing a vertex
         vertex = self.simple_graph.get_vertex(699)
@@ -76,6 +79,8 @@ class PlanningAgent():
 
 
     def simplifyWorld(self, level):
+
+        # first level that just pulls out intersections
         if level == 0:
             # initialize empty graph
             self.simple_graph = Graph()
@@ -97,15 +102,19 @@ class PlanningAgent():
                 
                 # recurse through current neighbors to add edges between new vertices
                 for key in neighbors:
-                    new_key, distance, value = self.recurse(vertex.key, key, distance=1, value=0)
+                    new_key, distance, value = self.generateEdge(vertex.key, key, distance=1, value=0)
                     if new_key != -1:
-                        print("Distance: " + str(distance))
                         self.simple_graph.add_edge(vertex.key, new_key, distance, value)
+        # second level which
+        # elif level == 1:
+
+
+            
 
 
     # recurses through path from vertex with key_a to another (already defined) vertex
     # returns a tuple = (key, distance, value) that represents the edge
-    def recurse(self, key_a, key_b, distance, value):
+    def generateEdge(self, key_a, key_b, distance, value):
         if key_b in self.simple_graph.get_vertices():
             # if the key is already a vertex, return the vertex with the distance and value
             # up to that point in the recursion
@@ -120,7 +129,7 @@ class PlanningAgent():
                     if next_key != key_a:
                         distance += 1
                         value += cur_vertex.value
-                        return self.recurse(key_b, next_key, distance, value)
+                        return self.generateEdge(key_b, next_key, distance, value)
             else:
                 # return a bad key to signal deadend
                 return (-1, 0, 0)
