@@ -31,8 +31,8 @@ class PlanningAgent():
         new_world = pickle.load(open(file_name, 'rb'))
         
         # take out the buffer walls if old map
-        if len(new_world) == 33:
-            self.world_size = len(new_world) - 2
+        if len(new_world) == 34:
+            self.world_size = len(new_world) - 3
             self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
             for i in range(self.world_size):
                 for j in range(self.world_size):
@@ -55,37 +55,57 @@ class PlanningAgent():
         found_sol = False
         
         if not found_sol:
-            for i in range(5):
+            for i in range(1):
                 self.simplifyWorld(level=i)
 
+        for vertex in self.simple_graph:
+            print(vertex.get_xy(self.world_size))
+
+        vertex = self.simple_graph.get_vertex(699)
+        print(vertex.get_xy(self.world_size))
+        for neighbor in vertex.get_neighbors():
+            print(neighbor.get_xy(self.world_size))
+
+
     def simplifyWorld(self, level):
-        
         if level == 0:
             # initialize empty graph
             self.simple_graph = Graph()
 
             # add vertices with a choice value > 2 (intersections)
-            for vertex in self.G.vertices:
+            for vertex in self.G:
                 if len(vertex.get_neighbors()) > 2:
+                    print("Adding: " + str(vertex.get_xy(self.world_size)))
                     self.simple_graph.add_vertex(vertex)
 
             # connect vertices with edges
-            for vertex in self.simple_graph.vertices:
+            for vertex in self.simple_graph:
+                # copy neighbor list
                 neighbors = vertex.get_neighbors()
+                # clear neighbor list
+                vertex.neighbor_list = {}
                 
-                for new_key in neighbors:
-                    self.recurse(cur_key, new_key)
+                for neighbor in neighbors:
+                    new_key = self.recurse(vertex.key, neighbor.key)
+                    if new_key != -1:
+                        self.simple_graph.add_edge(vertex.key, new_key)
 
-        elif level == 1:
 
-    def recurse(self, cur_key, new_key):
-        if key in self.simple_graph.get_vertices():
-            return self.G.get_vertex(new_key)
+    def recurse(self, key_a, key_b):
+        if key_b in self.simple_graph.get_vertices():
+            # if the key is already a vertex, return the vertex
+            return key_b
         else:
-            neighbors = self.G.get_vertex(new_key).get_neighbors()
-            for key in neighbors:
-                if key != cur_key:
-                    return recurse(new_key, key)
+            # else keep recursing until either a vertex or deadend is found
+            neighbors = self.G.get_vertex(key_b).get_neighbors()
+            if len(neighbors) > 1:
+                for next_neighbor in neighbors:
+                    # make sure not to recurse back the way we came
+                    if next_neighbor.key != key_a:
+                        return self.recurse(key_b, next_neighbor.key)
+            else:
+                # return a bad key to signal deadend
+                return -1
 
         
 
