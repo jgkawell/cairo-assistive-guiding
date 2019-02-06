@@ -61,10 +61,11 @@ class PlanningAgent():
         for vertex in self.simple_graph:
             print(vertex.get_xy(self.world_size))
 
+        # testing a vertex
         vertex = self.simple_graph.get_vertex(699)
-        print(vertex.get_xy(self.world_size))
+        print("Vertex: " + str(vertex.get_xy(self.world_size)))
         for neighbor in vertex.get_neighbors():
-            print(neighbor.get_xy(self.world_size))
+            print("Neighbor: " + str(neighbor.get_xy(self.world_size)))
 
 
     def simplifyWorld(self, level):
