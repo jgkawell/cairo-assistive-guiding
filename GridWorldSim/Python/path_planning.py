@@ -19,20 +19,23 @@ class Vertex():
     def __init__(self, key, cell_type = None):
         self.key = key
         self.cell_type = cell_type
-        self.reward = 0
+        self.value = 0
         self.neighbor_list = {}
         self.parent = -1
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
 
         if cell_type == "Reward":
-            self.reward = 1
+            self.value = 1
+        elif cell_type == "Hazard":
+            self.value = -0.5
 
-    def add_neighbor(self, neighbor, weight=1):
-        self.neighbor_list[neighbor] = weight
+    # adds a neighbor to the vertex with a distance and value across the edge
+    def add_neighbor(self, key, distance=1, value=0):
+        self.neighbor_list[key] = (distance, value)
 
     def get_neighbors(self):
-        return self.neighbor_list.keys()
+        return self.neighbor_list
 
     def get_xy(self, world_size):
         x = self.key % world_size
@@ -92,9 +95,9 @@ class Graph():
     def __iter__(self):
         return self.vertices.values().__iter__()
 
-    def add_edge(self, from_key, to_key, weight=1): #assume bidirectional
-        self.vertices[from_key].add_neighbor(self.vertices[to_key], weight=weight)
-        self.vertices[to_key].add_neighbor(self.vertices[from_key], weight=weight)
+    def add_edge(self, from_key, to_key, distance=1, value=0): #assume bidirectional
+        self.vertices[from_key].add_neighbor(to_key, distance, value)
+        self.vertices[to_key].add_neighbor(from_key, distance, value)
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
@@ -126,8 +129,9 @@ def a_star(graph, start, goal):
 
         if current == goal: break
 
-        neighbors = current.get_neighbors()
-        for neighbor in neighbors:
+        neighbors = current.get_neighbors().keys()
+        for key in neighbors:
+            neighbor = graph.get_vertex(key)
             cost = current.dist + 1 - neighbor.reward#assume uniform cost across all edges
             if cost < neighbor.dist and neighbor in frontier_tracker: #found a better path to neighbor
                 frontier_tracker.pop(neighbor)
