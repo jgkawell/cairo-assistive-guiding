@@ -16,7 +16,7 @@ class PriorityQueue:
         return heapq.heappop(self.elements)[1]
 
 class Vertex():
-    def __init__(self, key, cell_type = None):
+    def __init__(self, key, world_size, cell_type = None):
         self.key = key
         self.cell_type = cell_type
         self.value = 0
@@ -24,6 +24,7 @@ class Vertex():
         self.parent = -1
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
+        self.xy = self.get_xy(world_size)
 
         if cell_type == "Reward":
             self.value = 1
@@ -31,8 +32,9 @@ class Vertex():
             self.value = -0.5
 
     # adds a neighbor to the vertex with a distance and value across the edge
-    def add_neighbor(self, key, distance=1, value=0):
-        self.neighbor_list[key] = (distance, value)
+    # direction: 1=N, 2=E, 3=S, 4=W
+    def add_neighbor(self, key, direction, distance=1, value=0):
+        self.neighbor_list[key] = (direction, distance, value)
 
     def get_neighbors(self):
         return self.neighbor_list
@@ -65,20 +67,21 @@ class Graph():
             for j in range(0, world_size):
                 key = i + world_size * j
                 celltype = world[i][j]
-                v = Vertex(key, celltype)
+                v = Vertex(key, self.world_size, celltype)
                 self.add_vertex(v)
 
         for i in range(world_size**2):
             v_cur = self.get_vertex(i)
             if v_cur.cell_type != "Wall": # 'i' rows by 'j' columns, key = world_size * i + j
-                if i % world_size != world_size-1 and self.get_vertex(i+1).cell_type != "Wall":
-                    self.add_edge(i, i+1) #try to add cell to the right
-                if i % world_size != 0 and self.get_vertex(i-1).cell_type != "Wall":
-                    self.add_edge(i, i-1) #cell to the left
                 if i + world_size < world_size**2 and self.get_vertex(i+world_size).cell_type != "Wall":
-                    self.add_edge(i, i+world_size) #cell above
+                    self.add_edge(i, i+world_size, direction=1) #cell north
+                if i % world_size != world_size-1 and self.get_vertex(i+1).cell_type != "Wall":
+                    self.add_edge(i, i+1, direction=2) #cell east
                 if i - world_size > 0 and self.get_vertex(i-world_size).cell_type != "Wall":
-                    self.add_edge(i, i-world_size) #cell below
+                    self.add_edge(i, i-world_size, direction=3) #cell south
+                if i % world_size != 0 and self.get_vertex(i-1).cell_type != "Wall":
+                    self.add_edge(i, i-1, direction=4) #cell west
+                
 
     def add_vertex(self, vertex):
         self.vertices[vertex.key] = vertex
@@ -95,9 +98,9 @@ class Graph():
     def __iter__(self):
         return self.vertices.values().__iter__()
 
-    def add_edge(self, from_key, to_key, distance=1, value=0): #assume bidirectional
-        self.vertices[from_key].add_neighbor(to_key, distance, value)
-        self.vertices[to_key].add_neighbor(from_key, distance, value)
+    def add_edge(self, from_key, to_key, direction, distance=1, value=0):
+        self.vertices[from_key].add_neighbor(to_key, direction, distance, value)
+        # self.vertices[to_key].add_neighbor(from_key, direction, distance, value)
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos

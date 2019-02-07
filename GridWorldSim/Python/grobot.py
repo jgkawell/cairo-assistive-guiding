@@ -229,6 +229,8 @@ class GRobot():
             print("Please make sure Simulator is running")
             exit()
 
+            
+
         return rmsg
 
     def init(self, xpos=1, ypos=1):

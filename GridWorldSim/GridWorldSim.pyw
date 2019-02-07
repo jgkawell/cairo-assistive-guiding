@@ -215,6 +215,8 @@ class GridWorldSim(tk.Tk):
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
 
+        
+
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
             self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
