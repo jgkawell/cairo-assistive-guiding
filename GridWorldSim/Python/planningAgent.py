@@ -16,6 +16,7 @@ except:
 from grobot import GRobot
 from path_planning import *
 import pickle
+import time
 
 
 class PlanningAgent():
@@ -56,26 +57,16 @@ class PlanningAgent():
         
         if not found_sol:
             for i in range(5):
+                # simplify for certain level
                 self.simplifyWorld(level=i)
 
+                # show vertices found
+                for vertex in self.simple_graph:
+                    x, y = vertex.get_xy(self.world_size)
+                    self.robot.modifyCell(x, y, "Door")
 
-        # show vertices marked as intersections
-
-        for vertex in self.simple_graph:
-            x, y = vertex.get_xy(self.world_size)
-            self.robot.modifyCell(x, y, "Door")
-
-        self.robot.forward()
-
-        # testing a vertex
-        vertex = self.simple_graph.get_vertex(699)
-        print("Vertex: " + str(vertex.get_xy(self.world_size)))
-        neighbors = vertex.get_neighbors()
-        for key, info in vertex.get_neighbors().items():
-            neighbor = self.simple_graph.get_vertex(key)
-            print("Neighbor: " + str(neighbor.get_xy(self.world_size)))
-            print("Distance: " + str(info[0]))
-            print("Value: " + str(info[1]))
+                # pauses
+                time.sleep(3)
 
 
     def simplifyWorld(self, level):
@@ -92,44 +83,68 @@ class PlanningAgent():
                     print("Adding: " + str(vertex.get_xy(self.world_size)))
                     vertex_list.append(vertex)
 
-            # connect vertices with edges
-            for vertex in vertex_list:
-                # copy neighbor list
-                neighbors = vertex.get_neighbors().keys()
-                # clear neighbor list and add vertex to new graph
-                vertex.neighbor_list = {}
-                self.simple_graph.add_vertex(vertex)
-                
-                # recurse through current neighbors to add edges between new vertices
-                for key in neighbors:
-                    new_key, distance, value = self.generateEdge(vertex.key, key, distance=1, value=0)
-                    if new_key != -1:
-                        self.simple_graph.add_edge(vertex.key, new_key, distance, value)
-        # second level which
-        # elif level == 1:
+            self.generateEdges(vertex_list)
+            
+        # second level which adds in intermediate vertices
+        elif level == 1:
+            distance_limit = 2
 
+            initial_vertices = self.simple_graph.get_vertices()
+            completed_paths = {}
+
+            for cur_key in initial_vertices:
+                neighbors = self.simple_graph.get_vertex(cur_key).get_neighbors()
+
+                for next_key, info in neighbors.items():
+                    if (cur_key, next_key) not in completed_paths and (next_key, cur_key) not in completed_paths:
+                        distance = info[0]
+                        if  distance > distance_limit:
+                            new_key, new_distance, new_value = self.findEdge(cur_key, next_key, distance=1, value=0, cur_depth=0, max_depth=int(distance/2))
+                            new_vertex = self.full_graph.get_vertex(new_key)
+                            new_vertex.neighbor_list = {}
+                            print("Adding new vertex...")
+                            self.simple_graph.add_vertex(new_vertex)
+
+            self.generateEdges(self.simple_graph.vertices.values())
 
             
+    def generateEdges(self, vertex_list):
+        # initialize empty graph
+        self.simple_graph = Graph()
 
+        # connect vertices with edges
+        for vertex in vertex_list:
+            # copy neighbor list
+            neighbors = vertex.get_neighbors()
+            # clear neighbor list and add vertex to new graph
+            vertex.neighbor_list = {}
+            self.simple_graph.add_vertex(vertex)
+            
+            # recurse through current neighbors to add edges between new vertices
+            for key in neighbors.keys():
+                new_key, distance, value = self.findEdge(vertex.key, key, distance=1, value=0)
+                if new_key != -1:
+                    self.simple_graph.add_edge(vertex.key, new_key, distance, value)
 
     # recurses through path from vertex with key_a to another (already defined) vertex
     # returns a tuple = (key, distance, value) that represents the edge
-    def generateEdge(self, key_a, key_b, distance, value):
-        if key_b in self.simple_graph.get_vertices():
-            # if the key is already a vertex, return the vertex with the distance and value
-            # up to that point in the recursion
+    def findEdge(self, key_a, key_b, distance, value, cur_depth=0, max_depth=-1):
+        if cur_depth == max_depth or key_b in self.simple_graph.get_vertices():
+            # if the key is already a vertex, return the vertex or the max depth has been reached
+            # with the distance and value up to that point in the recursion
             return (key_b, distance, value)
         else:
             # else keep recursing until either a vertex or deadend is found
             cur_vertex = self.full_graph.get_vertex(key_b)
-            neighbors = cur_vertex.get_neighbors().keys()
+            neighbors = cur_vertex.get_neighbors()
             if len(neighbors) > 1:
-                for next_key in neighbors:
+                for next_key in neighbors.keys():
                     # make sure not to recurse back the way we came
                     if next_key != key_a:
                         distance += 1
                         value += cur_vertex.value
-                        return self.generateEdge(key_b, next_key, distance, value)
+                        cur_depth += 1
+                        return self.findEdge(key_b, next_key, distance, value, cur_depth, max_depth)
             else:
                 # return a bad key to signal deadend
                 return (-1, 0, 0)

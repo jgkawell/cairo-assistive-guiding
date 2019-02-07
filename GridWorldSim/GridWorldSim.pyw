@@ -212,7 +212,6 @@ class GridWorldSim(tk.Tk):
             self.world[x][y] = None
             
     def modifyCell(self, x, y, cell_type):
-        print("Modifying cell..." + cell_type)
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
 
@@ -532,7 +531,7 @@ class GridWorldSim(tk.Tk):
             except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
-                print(e)
+                print("EXCEPTION: " + str(e))
 
             if rmsg == None:
                 rmsg == "None"
