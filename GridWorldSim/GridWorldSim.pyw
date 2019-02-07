@@ -177,7 +177,7 @@ class GridWorldSim(tk.Tk):
             for j in range(0, self.mapsize):
                 if self.fogWorld:
                     self.fillGrid(i, j, "Fog")
-                else:                    
+                else:
                     self.fillGrid(i, j, self.world[i][j])
 
     def clickGrid(self, mousex, mousey):
@@ -215,7 +215,6 @@ class GridWorldSim(tk.Tk):
         print("Modifying cell..." + cell_type)
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
-        self.drawWorld()
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -527,12 +526,13 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "P":
                     rmsg = self.getXYpos(msg[1])
                 elif msg[0] == "M":
-                    rmsg = self.modifyCell(x=msg[2], y=msg[3], cell_type=msg[4])
+                    rmsg = self.modifyCell(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 else:
                     rmsg = "Unknown command"
-            except:
+            except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
+                print(e)
 
             if rmsg == None:
                 rmsg == "None"
