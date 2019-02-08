@@ -7,10 +7,14 @@ except:
 
 try:
     # Python 3 tkinter
+    import tkinter as tk
     import tkinter.filedialog as fd
+    import tkinter.messagebox as mb
 except:
     # Else Python 2 Tkinter
+    import Tkinter as tk
     import tkFileDialog as fd
+    import tkMessageBox as mb
 
 
 # Set up curses for key input (from https://www.codehaven.co.uk/using-arrow-keys-with-inputs-python/)
@@ -98,7 +102,10 @@ class DemoAgent():
         elif y < 0 or y >= self.world_size:
             return ("Wall", x, y)
         else:
-            return (self.world[x][y], x, y)
+            cell_type = self.world[x][y]
+            if cell_type != None:
+                cell_type = cell_type.encode("utf-8")
+            return (cell_type, x, y)
 
 
 if __name__ == "__main__":

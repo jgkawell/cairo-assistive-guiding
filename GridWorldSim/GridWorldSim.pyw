@@ -106,6 +106,7 @@ class GridWorldSim(tk.Tk):
 
         # Initialize default world
         self.defaultWorld = "./Maps/fullOffice.map"
+        self.cur_file = self.defaultWorld # Save the current file for other agents to pull from
         self.defaultMapSize = 31
         self.explored = [[False] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # unexplored map
         self.world = [[None] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # World map
@@ -210,7 +211,12 @@ class GridWorldSim(tk.Tk):
             # Make wall (etc.?)
             self.fillGrid(x, y, None)
             self.world[x][y] = None
-            
+
+    # change the look of a cell WITHOUT changing its contents  
+    def modifyCellLook(self, x, y, cell_type):
+        self.fillGrid(x, y, cell_type)
+
+    # change the look of a cell AND change its contents
     def modifyCell(self, x, y, cell_type):
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
@@ -286,6 +292,7 @@ class GridWorldSim(tk.Tk):
             if filename[-4:] != ".map":
                 filename += ".map"
 
+            self.cur_file = filename
             self.openWorld(filename)
 
     def openWorld(self, filename):
@@ -526,8 +533,10 @@ class GridWorldSim(tk.Tk):
                     rmsg = str(self.look(msg[1]))
                 elif msg[0] == "P":
                     rmsg = self.getXYpos(msg[1])
+                elif msg[0] == "G":
+                    rmsg = self.cur_file
                 elif msg[0] == "M":
-                    rmsg = self.modifyCell(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
+                    rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 else:
                     rmsg = "Unknown command"
             except Exception as e:
