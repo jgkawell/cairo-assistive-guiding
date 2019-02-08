@@ -33,30 +33,30 @@ class HumanAgent():
         newworld = pickle.load(open(worldPath, 'rb'))
 
         # take out the buffer walls if old map
-        if len(newworld) == 33:
-            self.mapsize = len(newworld) - 2
-            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
-            for i in range(self.mapsize):
-                for j in range(self.mapsize):
-                    self.world[i][j] = newworld[i+1][j+1]
+        if len(new_world) == 33:
+            self.world_size = len(new_world) - 2
+            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
+            for i in range(self.world_size):
+                for j in range(self.world_size):
+                    self.world[i][j] = new_world[i+1][j+1]
         else:
-            self.mapsize = len(newworld)
-            self.world = [[None] * (self.mapsize) for i in range(self.mapsize)]  # World map
-            for i in range(self.mapsize):
-                for j in range(self.mapsize):
-                    self.world[i][j] = newworld[i][j]
+            self.world_size = len(new_world)
+            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
+            for i in range(self.world_size):
+                for j in range(self.world_size):
+                    self.world[i][j] = new_world[i][j]
 
         # Erase hazards from memory
         # TODO: We will need to modify this to remove random rewards as well
 
-        for i in range(0, self.mapsize):
-            for j in range(0, self.mapsize):
+        for i in range(0, self.world_size):
+            for j in range(0, self.world_size):
                 if self.world[i][j] == "Hazard":
                     self.world[i][j] = None
 
         if self.knowledge == 0:
-            for i in range(0, self.mapsize):
-                for j in range(0, self.mapsize):
+            for i in range(0, self.world_size):
+                for j in range(0, self.world_size):
                     if self.world[i][j] == "Reward" and np.random.uniform() >= 0.5:
                         self.world[i][j] = None
 
@@ -67,7 +67,7 @@ class HumanAgent():
 
     def plan(self):
         #path plan with a*
-        G = Graph(self.mapsize, self.world)
+        G = Graph(self.world_size, self.world)
         start_key = G.get_key(1, 0)
         start = G.get_vertex(start_key)
         print("Start: 1, 0")
