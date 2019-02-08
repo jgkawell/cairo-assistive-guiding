@@ -63,6 +63,7 @@ class PlanningAgent():
             new_size = self.simplifyWorld(old_size, level=level)
             level += 1
 
+            # check to see if abstraction has changed sizes, if not, stop
             if old_size == new_size:
                 maxed = True
             else:
@@ -88,6 +89,8 @@ class PlanningAgent():
         else:
             # set distance limit for generating new vertices
             distance_limit = 5 - level
+            if distance_limit < 1:
+                distance_limit = 1
             # generate new vertices between current vertices
             key_list = self.generateIntermediateVertices(distance_limit)
             # generate the new edges between vertices
@@ -125,9 +128,6 @@ class PlanningAgent():
         for key in self.abstract_graph.get_vertices():
             start_vertices.append(key)
 
-        # keep track of vertices that have already been searched for intermediate vertices
-        completed_vertices = []
-
         # keep track of new vertex keys to add
         key_list = []
 
@@ -139,12 +139,12 @@ class PlanningAgent():
             start_vertex.neighbor_list = {}
 
             # iterate through current neighbors and find intermediate vertices along the paths between
-            for end_key, end_info in abstract_neighbors.items():
+            for end_info in abstract_neighbors.values():
                 # pull out the neighbor distance
                 abstract_distance = end_info[1]
 
                 # check to see if the vertex has already been completed and if the distance is great enough
-                if end_key not in completed_vertices and abstract_distance >= distance_limit:
+                if abstract_distance > distance_limit:
                     # pull out the neighbor direction and the real neighbors
                     abstract_direction = end_info[0]
                     real_neighbors = self.real_graph.get_vertex(start_key).get_neighbors()
@@ -178,7 +178,7 @@ class PlanningAgent():
                                 self.abstract_graph.add_vertex(new_vertex)
 
             # make sure not to add any more vertices linking to this vertex
-            completed_vertices.append(start_key)
+            # completed_vertices.append(start_key)
 
         # add other vertices to key list for edge generation
         for vertex in self.abstract_graph:
@@ -207,7 +207,7 @@ class PlanningAgent():
 
     # recurses through path from vertex with key_a to max depth or another already defined vertex (whichever comes first)
     # returns a tuple = (key, distance, value) that represents the edge
-    def findEdgeInfo(self, key_a, key_b, distance=1, value=0):
+    def findEdgeInfo(self, key_a, key_b, distance, value):
         if key_b in self.abstract_graph.get_vertices():
             # if the key is already a vertex, return the vertex or the max depth has been reached
             # with the distance and value up to that point in the recursion
@@ -227,7 +227,7 @@ class PlanningAgent():
                 # return a bad key to signal deadend
                 return (-1, 0, 0)
 
-    def findAbstractNeighbor(self, key_a, key_b, cur_depth=0, max_depth=-1):
+    def findAbstractNeighbor(self, key_a, key_b, cur_depth, max_depth):
         if cur_depth == max_depth:
             return key_b
         else:

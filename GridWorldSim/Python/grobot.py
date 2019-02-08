@@ -196,17 +196,13 @@ class GRobot():
         self.colour=colour
         self.rshape=rshape
         msg = "N "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape
-        #print(msg)
         self._send(msg)
-        #atexit.register(self.tcpSock.close)
-        #atexit.register(self.tcpSock.shutdown, 1)
 
     def _send(self, msg):
         # Send message and get respose from Simulator
         try:
             # The simulator IP is on localhost, maybe to remote PC later?
             if type(msg)==str:
-                #self.tcpSock.setblocking(0)
                 self.tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 # Repeated runs can sometimes hang up here, because
                 # the socket hasn't been released by the kernel
@@ -268,10 +264,8 @@ def demo():
     print("Bill forward",bill.forward())
     print("Fred right", fred.right())
     print("Bill right", bill.right())
-    #fred.init(7,7)
     count = 12
     while count > 0:
-        #print(count)
         print("Fred looks at:", fred.look())
         print("Fred forward",fred.forward())
         print("Bill looks at:", bill.look())
@@ -289,7 +283,6 @@ def demo2():
     print("Ted right", ted.right())
     count = 12
     while count > 0:
-        #print(count)
         print("Arthur looks at: ", arthur.look())
         print("Arthur forward",arthur.forward())
         print("Ted looks at:", ted.look())

@@ -382,14 +382,9 @@ class GridWorldSim(tk.Tk):
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
 
-            self.world[posx][posy] = None  # Clear robot from world
             self.robots[rname].forward(20)  # move to next grid square
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
-
-            # update to world to show robot
-            self.world[posx][posy] = rname
-            self.look(rname)
 
             return "OK"
         else:
@@ -435,11 +430,12 @@ class GridWorldSim(tk.Tk):
                 # Facing edge of world
                 val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
 
-            # for block in val:
-            #     px, py = block[1], block[2]
-            #     if self.explored[px][py] == False:
-            #         self.explored[px][py] = True
-            #         self.fillGrid(px, py, self.world[px][py])
+
+            for block in val:
+                px, py = block[1], block[2]
+                if self.explored[px][py] == False:
+                    self.explored[px][py] = True
+                    self.fillGrid(px, py, self.world[px][py])
 
             return val
 
@@ -518,7 +514,6 @@ class GridWorldSim(tk.Tk):
             # Do robot commands
             try:
                 if msg[0] == "N":
-                    # print(msg) #debug
                     # New or init robot
                     rmsg = self.newRobot(msg[1], int(
                         msg[2]), int(msg[3]), msg[4], msg[5])
