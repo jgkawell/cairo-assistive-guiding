@@ -102,10 +102,11 @@ class GridWorldSim(tk.Tk):
 
         # Handler for mouse clicks
         self.screen = self.robot1.getscreen()
-        self.screen.onclick(self.editGrid, btn=1)  # Mouse left button
+        self.screen.onclick(self.clickGrid, btn=1)  # Mouse left button
 
         # Initialize default world
         self.defaultWorld = "./Maps/fullOffice.map"
+        self.cur_file = self.defaultWorld # Save the current file for other agents to pull from
         self.defaultMapSize = 31
         self.explored = [[False] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # unexplored map
         self.world = [[None] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # World map
@@ -177,14 +178,15 @@ class GridWorldSim(tk.Tk):
             for j in range(0, self.mapsize):
                 if self.fogWorld:
                     self.fillGrid(i, j, "Fog")
-                else:                    
+                else:
                     self.fillGrid(i, j, self.world[i][j])
 
-    def editGrid(self, mousex, mousey):
+    def clickGrid(self, mousex, mousey):
         x = self.maptoX(mousex)
         y = self.maptoY(mousey)
         cell_type = self.world[x][y]
 
+        # cycle through different cell values
         if cell_type == None:
             # Make Fog
             self.fillGrid(x, y, "Fog")
@@ -209,6 +211,17 @@ class GridWorldSim(tk.Tk):
             # Make wall (etc.?)
             self.fillGrid(x, y, None)
             self.world[x][y] = None
+
+    # change the look of a cell WITHOUT changing its contents  
+    def modifyCellLook(self, x, y, cell_type):
+        self.fillGrid(x, y, cell_type)
+
+    # change the look of a cell AND change its contents
+    def modifyCell(self, x, y, cell_type):
+        self.fillGrid(x, y, cell_type)
+        self.world[x][y] = cell_type
+
+        
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -279,6 +292,7 @@ class GridWorldSim(tk.Tk):
             if filename[-4:] != ".map":
                 filename += ".map"
 
+            self.cur_file = filename
             self.openWorld(filename)
 
     def openWorld(self, filename):
@@ -368,14 +382,9 @@ class GridWorldSim(tk.Tk):
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
 
-            self.world[posx][posy] = None  # Clear robot from world
             self.robots[rname].forward(20)  # move to next grid square
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
-
-            # update to world to show robot
-            self.world[posx][posy] = rname
-            self.look(rname)
 
             return "OK"
         else:
@@ -421,11 +430,12 @@ class GridWorldSim(tk.Tk):
                 # Facing edge of world
                 val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
 
-            # for block in val:
-            #     px, py = block[1], block[2]
-            #     if self.explored[px][py] == False:
-            #         self.explored[px][py] = True
-            #         self.fillGrid(px, py, self.world[px][py])
+
+            for block in val:
+                px, py = block[1], block[2]
+                if self.explored[px][py] == False:
+                    self.explored[px][py] = True
+                    self.fillGrid(px, py, self.world[px][py])
 
             return val
 
@@ -504,7 +514,6 @@ class GridWorldSim(tk.Tk):
             # Do robot commands
             try:
                 if msg[0] == "N":
-                    # print(msg) #debug
                     # New or init robot
                     rmsg = self.newRobot(msg[1], int(
                         msg[2]), int(msg[3]), msg[4], msg[5])
@@ -519,11 +528,16 @@ class GridWorldSim(tk.Tk):
                     rmsg = str(self.look(msg[1]))
                 elif msg[0] == "P":
                     rmsg = self.getXYpos(msg[1])
+                elif msg[0] == "G":
+                    rmsg = self.cur_file
+                elif msg[0] == "M":
+                    rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 else:
                     rmsg = "Unknown command"
-            except:
+            except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
+                print("EXCEPTION: " + str(e))
 
             if rmsg == None:
                 rmsg == "None"

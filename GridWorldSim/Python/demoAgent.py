@@ -5,14 +5,6 @@ try:
 except:
     pass
 
-try:
-    # Python 3 tkinter
-    import tkinter.filedialog as fd
-except:
-    # Else Python 2 Tkinter
-    import tkFileDialog as fd
-
-
 # Set up curses for key input (from https://www.codehaven.co.uk/using-arrow-keys-with-inputs-python/)
 import curses
 screen = curses.initscr()
@@ -29,7 +21,11 @@ class DemoAgent():
     def __init__(self):
         # Initialise globals
         self.robot = GRobot("demoAgent", colour="yellow")
-        file_name = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
+       
+        # get file name from simulator
+        file_name = self.robot.getFile()
+        if file_name[0] == ".":
+            file_name = "../" + file_name
 
         # import world
         new_world = pickle.load(open(file_name, 'rb'))
@@ -98,7 +94,10 @@ class DemoAgent():
         elif y < 0 or y >= self.world_size:
             return ("Wall", x, y)
         else:
-            return (self.world[x][y], x, y)
+            cell_type = self.world[x][y]
+            if cell_type != None:
+                cell_type = cell_type.encode("utf-8")
+            return (cell_type, x, y)
 
 
 if __name__ == "__main__":
