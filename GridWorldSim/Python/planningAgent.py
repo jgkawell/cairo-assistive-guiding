@@ -17,6 +17,7 @@ from grobot import GRobot
 from path_planning import *
 import pickle
 import time
+import copy
 
 
 class PlanningAgent():
@@ -29,7 +30,7 @@ class PlanningAgent():
         # file_name = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
 
         # import world
-        new_world = pickle.load(open("/home/jgkawell/Documents/Repos/Boulder/cairo-assistive-guiding-project/GridWorldSim/Maps/NewMaze.map", 'rb'))
+        new_world = pickle.load(open("/home/jgkawell/Documents/Repos/Boulder/cairo-assistive-guiding-project/GridWorldSim/Maps/NewMazeExtra.map", 'rb'))
         
         # take out the buffer walls if old map
         if len(new_world) == 34:
@@ -56,7 +57,7 @@ class PlanningAgent():
         found_sol = False
         
         if not found_sol:
-            for i in range(5):
+            for i in range(10):
                 # simplify for certain level
                 self.simplifyWorld(level=i)
 
@@ -79,11 +80,12 @@ class PlanningAgent():
             # add vertices with a choice-value > 2 (intersections)
             key_list = []
             for vertex in self.full_graph:
-                if len(vertex.get_neighbors()) > 2:
-                    print("Adding: " + str(vertex.get_xy(self.world_size)))
-                    key_list.append(vertex.key)
+                if len(vertex.get_neighbors()) > 2 or vertex.cell_type == "Reward":
+                    # create new vertex
+                    copy_vertex = copy.deepcopy(vertex)                    
 
-                    copy_vertex = vertex
+                    # add to key list for edge generation
+                    key_list.append(vertex.key)
 
                     # clear neighbors and add to abstract_graph
                     copy_vertex.neighbor_list = {}
@@ -92,51 +94,57 @@ class PlanningAgent():
             self.generateEdges(key_list)
             
         # second level which adds in intermediate vertices
-        elif level == 1:
-            distance_limit = 5
+        else:
+            distance_limit = 5 - level
 
-            start_vertices = self.abstract_graph.get_vertices()
-            completed_paths = []
-            key_list = []
-
-            for start_key in start_vertices:
-                abstract_neighbors = self.abstract_graph.get_vertex(start_key).get_neighbors()
-
-                for end_key, end_info in abstract_neighbors.items():
-                    if (start_key, end_key) not in completed_paths:
-                        abstract_distance = end_info[1]
-                        if  abstract_distance > distance_limit:
-                            abstract_direction = end_info[0]
-                            full_neighbors = self.full_graph.get_vertex(start_key).get_neighbors()
-
-                            for full_key, full_info in full_neighbors.items():
-                                full_direction = full_info[0]
-                                if full_direction == abstract_direction:
-                                    # find new vertex
-                                    new_key = self.generateAbstractNeighbor(start_key, full_key, cur_depth=1, max_depth=int(abstract_distance/2))
-                                    new_vertex = self.full_graph.get_vertex(new_key)
-
-                                    # add to completed paths to keep from finding another new vertex
-                                    completed_paths.extend([(start_key, full_key), (full_key, start_key), (end_key, full_key), (full_key, end_key)])
-
-                                    # add to key list for edge generation
-                                    key_list.append(new_key)
-
-                                    # clear neighbors and add to abstract_graph
-                                    new_vertex.neighbor_list = {}
-                                    self.abstract_graph.add_vertex(new_vertex)
-
-                                    print("Adding: " + str(new_vertex.get_xy(self.world_size)))
-
-
-
-
-            
-            for vertex in self.abstract_graph:
-                key_list.append(vertex.key)
+            key_list = self.generateIntermediateVertices(distance_limit)
 
             self.generateEdges(key_list)
 
+
+
+    def generateIntermediateVertices(self, distance_limit):
+        start_vertices = []
+        for key in self.abstract_graph.get_vertices():
+            start_vertices.append(key)
+
+        completed_vertices = []
+        key_list = []
+
+        for start_key in start_vertices:
+            abstract_neighbors = self.abstract_graph.get_vertex(start_key).get_neighbors()
+
+            for end_key, end_info in abstract_neighbors.items():
+                abstract_distance = end_info[1]
+                if end_key not in completed_vertices and abstract_distance > distance_limit:
+                    abstract_direction = end_info[0]
+                    full_neighbors = self.full_graph.get_vertex(start_key).get_neighbors()
+
+                    for full_key, full_info in full_neighbors.items():
+                        full_direction = full_info[0]
+                        if full_direction == abstract_direction:
+                            # create new vertex
+                            new_key, temp_distance, temp_value = self.findAbstractNeighbor(start_key, full_key, cur_depth=1, max_depth=int(abstract_distance/2))
+                            if new_key == None:
+                                print("ERROR")
+
+                            new_vertex = copy.deepcopy(self.full_graph.get_vertex(new_key))
+
+                            # add to key list for edge generation
+                            key_list.append(new_key)
+
+                            # clear neighbors and add to abstract_graph
+                            new_vertex.neighbor_list = {}
+                            self.abstract_graph.add_vertex(new_vertex)
+
+            # make sure not to add any more vertices linking to this vertex
+            completed_vertices.append(start_key)
+
+        # add other vertices to key list for edge generation
+        for vertex in self.abstract_graph:
+            key_list.append(vertex.key)
+
+        return key_list
             
     def generateEdges(self, key_list):
 
@@ -150,12 +158,12 @@ class PlanningAgent():
                 new_key, distance, value = self.findAbstractNeighbor(cur_key, next_key, distance=1, value=0)
                 if new_key != -1:
                     direction = info[0]
-                    self.abstract_graph.add_edge(cur_key.key, new_key, direction, distance, value)
+                    self.abstract_graph.add_edge(cur_key, new_key, direction, distance, value)
 
     # recurses through path from vertex with key_a to another (already defined) vertex
     # returns a tuple = (key, distance, value) that represents the edge
-    def findAbstractNeighbor(self, key_a, key_b, distance, value):
-        if key_b in self.abstract_graph.get_vertices():
+    def findAbstractNeighbor(self, key_a, key_b, distance=1, value=0, cur_depth=0, max_depth=-1):
+        if key_b in self.abstract_graph.get_vertices() or cur_depth == max_depth:
             # if the key is already a vertex, return the vertex or the max depth has been reached
             # with the distance and value up to that point in the recursion
             return (key_b, distance, value)
@@ -169,7 +177,8 @@ class PlanningAgent():
                     if key_c != key_a:
                         distance += 1
                         value += cur_vertex.value
-                        return self.findAbstractNeighbor(key_b, key_c, distance, value)
+                        cur_depth += 1
+                        return self.findAbstractNeighbor(key_b, key_c, distance, value, cur_depth, max_depth)
             else:
                 # return a bad key to signal deadend
                 return (-1, 0, 0)
