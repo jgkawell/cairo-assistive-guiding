@@ -19,10 +19,14 @@ class Vertex():
     def __init__(self, key, cell_type = None):
         self.key = key
         self.cell_type = cell_type
+        self.reward = 0
         self.adj_list = {}
         self.parent = -1
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
+
+        if cell_type == "Reward":
+            self.reward = 1
 
     def add_neighbor(self, neighbor, weight=1):
         self.adj_list[neighbor] = weight
@@ -79,7 +83,7 @@ class Graph():
     def get_vertices(self):
         return self.vertices.keys()
 
-    def get_key(self, x, y): 
+    def get_key(self, x, y):
         return x + self.mapsize * y
 
     def __iter__(self):
@@ -121,7 +125,7 @@ def a_star(graph, start, goal):
 
         neighbors = current.get_neighbors()
         for neighbor in neighbors:
-            cost = current.dist + 1 #assume uniform cost across all edges
+            cost = current.dist + 1 - neighbor.reward#assume uniform cost across all edges
             if cost < neighbor.dist and neighbor in frontier_tracker: #found a better path to neighbor
                 frontier_tracker.pop(neighbor)
             if cost < neighbor.dist and neighbor in cost_so_far:
