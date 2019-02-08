@@ -100,7 +100,6 @@ class Graph():
 
     def add_edge(self, from_key, to_key, direction, distance=1, value=0):
         self.vertices[from_key].add_neighbor(to_key, direction, distance, value)
-        # self.vertices[to_key].add_neighbor(from_key, direction, distance, value)
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
@@ -124,7 +123,6 @@ def a_star(graph, start, goal):
     frontier_tracker[start] = 0
 
     start.dist = 0
-    explored = {}
     cost_so_far = {}
     cost_so_far[start] = 0
     while not frontier.empty():
@@ -135,7 +133,7 @@ def a_star(graph, start, goal):
         neighbors = current.get_neighbors().keys()
         for key in neighbors:
             neighbor = graph.get_vertex(key)
-            cost = current.dist + 1 - neighbor.reward#assume uniform cost across all edges
+            cost = current.dist + 1 - neighbor.value #assume uniform cost across all edges
             if cost < neighbor.dist and neighbor in frontier_tracker: #found a better path to neighbor
                 frontier_tracker.pop(neighbor)
             if cost < neighbor.dist and neighbor in cost_so_far:
@@ -146,4 +144,5 @@ def a_star(graph, start, goal):
                 priority = cost + heuristic(goal.get_xy(graph.world_size), neighbor.get_xy(graph.world_size))
                 frontier.put(neighbor, priority)
                 neighbor.parent = current.key
+                
     return trace(goal, graph)

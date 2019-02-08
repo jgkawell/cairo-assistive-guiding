@@ -70,10 +70,10 @@ class PlanningAgent():
                 old_size = new_size
 
             # find solution path
-            self.findSolution()
+            found_sol = self.findSolution()
 
             # pauses
-            time.sleep(0.25)
+            time.sleep(1)
 
     def simplifyWorld(self, world_size, level):
         # first level that just pulls out intersections
@@ -177,9 +177,6 @@ class PlanningAgent():
                                 new_vertex.neighbor_list = {}
                                 self.abstract_graph.add_vertex(new_vertex)
 
-            # make sure not to add any more vertices linking to this vertex
-            # completed_vertices.append(start_key)
-
         # add other vertices to key list for edge generation
         for vertex in self.abstract_graph:
             key_list.append(vertex.key)
@@ -245,7 +242,7 @@ class PlanningAgent():
                 return -1
 
     def findSolution(self):
-        return
+        return False
 
     def move(self):
         return

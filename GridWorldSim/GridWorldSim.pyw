@@ -26,7 +26,7 @@
 #   Fixed (Mac) socket, default map load dir. Contributed by Jamie Hollaway
 #   Fixed Bug in Look() routine when robot heading east. MLW
 # Version 2  March 2016
-#   Fixed serious bug in Look()routine. had to change Map.map file format/size
+#   Fixed serious bug in Look()routine. had to change World.map file format/size
 #       Will load V1 maps, but if saved from V2, will load in V1 program
 #       Reccomend update to V2!
 
@@ -81,11 +81,11 @@ class GridWorldSim(tk.Tk):
         self.canvas.pack()
 
         # Buttons under canvas area
-        self.newButton = tk.Button(master, text="New Map", command=lambda: self.newWorld())
+        self.newButton = tk.Button(master, text="New World", command=lambda: self.newWorld())
         self.newButton.pack(side=tk.LEFT)
-        self.loadButton = tk.Button(master, text="Load Map", command=lambda: self.loadWorld())
+        self.loadButton = tk.Button(master, text="Load World", command=lambda: self.loadWorld())
         self.loadButton.pack(side=tk.LEFT)
-        self.saveButton = tk.Button(master, text="Save Map", command=lambda: self.saveWorld())
+        self.saveButton = tk.Button(master, text="Save World", command=lambda: self.saveWorld())
         self.saveButton.pack(side=tk.LEFT)
         self.trailButton = tk.Button(master, text="Toggle Trails", command=lambda: self.toggleTrails())
         self.trailButton.pack(side=tk.RIGHT)
@@ -107,9 +107,8 @@ class GridWorldSim(tk.Tk):
         # Initialize default world
         self.defaultWorld = "./Maps/fullOffice.map"
         self.cur_file = self.defaultWorld # Save the current file for other agents to pull from
-        self.defaultMapSize = 31
-        self.explored = [[False] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # unexplored map
-        self.world = [[None] * (self.defaultMapSize+3) for i in range(self.defaultMapSize+3)]  # World map
+        self.defaultWorldSize = 31
+        self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
         self.openWorld(self.defaultWorld)
 
         # Start server for robot programs to connect
@@ -174,8 +173,8 @@ class GridWorldSim(tk.Tk):
             count -= 1
 
         # Draw filled grids squares
-        for i in range(0, self.mapsize):
-            for j in range(0, self.mapsize):
+        for i in range(0, self.world_size):
+            for j in range(0, self.world_size):
                 if self.fogWorld:
                     self.fillGrid(i, j, "Fog")
                 else:
@@ -225,53 +224,53 @@ class GridWorldSim(tk.Tk):
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="white", width=19)
         if cell_type == "Fog":
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="grey", width=19)
         elif cell_type == "Wall":
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="blue", width=19)
         elif cell_type == "Hazard":
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="red", width=19)
         elif cell_type == "Reward":
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="green", width=19)
         elif cell_type == "Door":
-            self.canvas.create_line(self.xtoMap(x)-11, self.ytoMap(y),
-                                    self.xtoMap(x)+8, self.ytoMap(y),
+            self.canvas.create_line(self.xtoWorld(x)-11, self.ytoWorld(y),
+                                    self.xtoWorld(x)+8, self.ytoWorld(y),
                                     fill="purple", width=19)
 
     def clearGrid(self, x, y):
         tagstr = str(x)+"u"+str(y)
         self.canvas.delete(tagstr)
 
-    def xtoMap(self, x=0):
+    def xtoWorld(self, x=0):
         return int(-self.frmwt//2 + 12 + x * self.gridspace)
 
-    def ytoMap(self, y=0):
+    def ytoWorld(self, y=0):
         return int(self.frmwt//2 - 12 - y * self.gridspace)
 
     def maptoX(self, mapx=0):
         return int((mapx + self.frmwt//2) // self.gridspace)
 
     def maptoY(self, mapy=0):
-        return int(self.mapsize - 1 - (mapy - self.frmht//2) // -self.gridspace)
+        return int(self.world_size - 1 - (mapy - self.frmht//2) // -self.gridspace)
 
     def newWorld(self):
-        self.world = [[None] * (self.defaultMapSize) for i in range(self.defaultMapSize)]  # World map
-        self.mapsize = self.defaultMapSize
+        self.world = [[None] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # World map
+        self.world_size = self.defaultWorldSize
         self.drawWorld()
 
     def saveWorld(self):
-        filename = fd.asksaveasfilename(filetypes=[("Map Files", "*.map")], initialdir=".")
+        filename = fd.asksaveasfilename(filetypes=[("World Files", "*.map")], initialdir=".")
         if filename != None:
             # remove robots from world!
             for robname in list(self.robots.keys()):
@@ -286,7 +285,7 @@ class GridWorldSim(tk.Tk):
             pickle.dump(self.world, open(filename, 'wb'), 2)
 
     def loadWorld(self):
-        filename = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="./Maps/")
+        filename = fd.askopenfilename(filetypes=[("World Files", "*.map")], initialdir="./Worlds/")
 
         if filename != "":
             if filename[-4:] != ".map":
@@ -296,27 +295,15 @@ class GridWorldSim(tk.Tk):
             self.openWorld(filename)
 
     def openWorld(self, filename):
-        newworld = pickle.load(open(filename, 'rb'))
-        
-        # take out the buffer walls if old map
-        if len(newworld) == 33:
-            self.mapsize = len(newworld) - 2
-            for i in range(self.mapsize):
-                for j in range(self.mapsize):
-                    self.world[i][j] = newworld[i+1][j+1]
-        else:
-            self.mapsize = len(newworld)
-            for i in range(self.mapsize):
-                for j in range(self.mapsize):
-                    self.world[i][j] = newworld[i][j]
-
+        self.world = pickle.load(open(filename, 'rb'))
+        self.world_size = len(self.world)
 
         # reset unexplored map
         exploredValue = True
         if self.fogWorld:
             exploredValue = False
 
-        self.explored = [[exploredValue] * (self.mapsize) for i in range(self.mapsize)]
+        self.explored = [[exploredValue] * (self.world_size) for i in range(self.world_size)]
         self.drawWorld()
 
     def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
@@ -328,8 +315,7 @@ class GridWorldSim(tk.Tk):
             self.robots[robname] = rbt.RawTurtle(self.canvas)
         else:
             # Remove "old" robot from World
-            self.world[self.maptoX(self.robots[robname].xcor(
-            ))][self.maptoY(self.robots[robname].ycor())] = None
+            self.world[self.maptoX(self.robots[robname].xcor())][self.maptoY(self.robots[robname].ycor())] = None
             
         # Robot shape/colour
         if rshape == "None":  # Can provide own shape def
@@ -355,7 +341,7 @@ class GridWorldSim(tk.Tk):
         self.robots[robname].penup()
         self.robots[robname].shape(robname+"shape")
         self.robots[robname].speed(0)
-        self.robots[robname].goto(self.xtoMap(posx)-2, self.ytoMap(self.mapsize-posy)+1)
+        self.robots[robname].goto(self.xtoWorld(posx)-2, self.ytoWorld(self.world_size-posy-1)+1)
         self.robots[robname].setheading(90)
         self.robots[robname].showturtle()
 
@@ -379,12 +365,11 @@ class GridWorldSim(tk.Tk):
     def moveForward(self, rname):
         #  check to see if forward is clear
         if self.look(rname)[2][0] != "Wall":  # Clear to move
+            # move to next grid square
+            self.robots[rname].forward(20)
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
-
-            self.robots[rname].forward(20)  # move to next grid square
-            posx = self.maptoX(self.robots[rname].xcor())
-            posy = self.maptoY(self.robots[rname].ycor())
+            print((posx, posy))
 
             return "OK"
         else:
@@ -414,10 +399,10 @@ class GridWorldSim(tk.Tk):
             posy = self.maptoY(self.robots[rname].ycor())
             heading = int(self.robots[rname].heading())
 
-            if heading == 0 and posx < self.mapsize:  # East
+            if heading == 0 and posx < self.world_size:  # East
                 val = [self.getValue(posx, posy+1), self.getValue(posx+1, posy+1),
                         self.getValue(posx+1, posy), self.getValue(posx+1, posy-1), self.getValue(posx, posy-1)]
-            elif heading == 90 and posy < self.mapsize:  # North
+            elif heading == 90 and posy < self.world_size:  # North
                 val = [self.getValue(posx-1, posy), self.getValue(posx-1, posy+1),
                         self.getValue(posx, posy+1), self.getValue(posx+1, posy+1), self.getValue(posx+1, posy)]
             elif heading == 180 and posx >= 0:  # West
@@ -442,9 +427,9 @@ class GridWorldSim(tk.Tk):
         return "Robot name not found"
 
     def getValue(self, x, y):
-        if x < 0 or x >= self.mapsize:
+        if x < 0 or x >= self.world_size:
             return ("Wall", x, y)
-        elif y < 0 or y >= self.mapsize:
+        elif y < 0 or y >= self.world_size:
             return ("Wall", x, y)
         else:
             return (self.world[x][y], x, y)
@@ -515,8 +500,7 @@ class GridWorldSim(tk.Tk):
             try:
                 if msg[0] == "N":
                     # New or init robot
-                    rmsg = self.newRobot(msg[1], int(
-                        msg[2]), int(msg[3]), msg[4], msg[5])
+                    rmsg = self.newRobot(msg[1], int(msg[2]), int(msg[3]), msg[4], msg[5])
                 elif msg[0] == "F":
                     # msg[1] is robot name
                     rmsg = self.moveForward(msg[1])

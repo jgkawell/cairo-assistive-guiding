@@ -14,99 +14,109 @@ except:
 
 # Setup imports
 from grobot import GRobot
+from random import randint
 from path_planning import *
 import pickle
 import numpy as np
 
 class HumanAgent():
 
-    def __init__(self, knowledge=0, optimal=False):
+    def __init__(self, knowledge=1, optimal=True):
         # Initialise globals
         self.robot = GRobot("HumanAgent", colour="yellow")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
         self.knowledge = knowledge
         self.optimal = optimal
-        worldPath = fd.askopenfilename(filetypes=[("Map Files", "*.map")], initialdir="../Maps/")
+        self.optimality_constant = 0.2
+        self.reward_removal_constant = 0.5
+        
+
+        # get file name from simulator
+        file_name = self.robot.getFile()
+        if file_name[0] == ".":
+            file_name = "../" + file_name
 
         # import world
-        newworld = pickle.load(open(worldPath, 'rb'))
+        self.world = pickle.load(open(file_name, 'rb'))
+        self.world_size = len(self.world)
 
-        # take out the buffer walls if old map
-        if len(new_world) == 33:
-            self.world_size = len(new_world) - 2
-            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
-            for i in range(self.world_size):
-                for j in range(self.world_size):
-                    self.world[i][j] = new_world[i+1][j+1]
-        else:
-            self.world_size = len(new_world)
-            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
-            for i in range(self.world_size):
-                for j in range(self.world_size):
-                    self.world[i][j] = new_world[i][j]
-
-        # Erase hazards from memory
-        # TODO: We will need to modify this to remove random rewards as well
-
+        # Erase hazards and (some) rewards from memory
+        self.reward_states = []
+        self.empty_states = []
         for i in range(0, self.world_size):
             for j in range(0, self.world_size):
-                if self.world[i][j] == "Hazard":
+                cell_type = self.world[i][j]
+                if cell_type == "Hazard":
+                    # remove all hazard knowledge
                     self.world[i][j] = None
-
-        if self.knowledge == 0:
-            for i in range(0, self.world_size):
-                for j in range(0, self.world_size):
-                    if self.world[i][j] == "Reward" and np.random.uniform() >= 0.5:
+                elif cell_type == "Reward":
+                    if self.knowledge == 0 and np.random.uniform() >= self.reward_removal_constant:
+                        # remove rewards randomly                        
                         self.world[i][j] = None
-
+                    else:
+                        # save reward state for goal generation
+                        self.reward_states.append((i,j))
+                elif cell_type == None:
+                    # save empy states for start generation
+                    self.empty_states.append((i,j))       
 
     def run(self):
-        goal, graph = self.plan()
-        self.move(goal, graph)
+        goal = self.plan()
+        self.move(goal)
 
     def plan(self):
+        # generate graph world
+        self.real_graph = Graph()
+        self.real_graph.setup_graph(self.world, self.world_size)
+
+        # generate start and goal states
+        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
+
+        start_key = self.real_graph.get_key(start_x, start_y)
+        start = self.real_graph.get_vertex(start_key)
+        print("Start: " + str((start_x, start_y)))
+
+        goal_key = self.real_graph.get_key(goal_x, goal_y)
+        goal = self.real_graph.get_vertex(goal_key)
+        print("Goal: " + str((goal_x, goal_y)))
+
+        self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
+
         #path plan with a*
-        G = Graph(self.world_size, self.world)
-        start_key = G.get_key(1, 0)
-        start = G.get_vertex(start_key)
-        print("Start: 1, 0")
-
-        goal_key = G.get_key(1, 15)
-        goal = G.get_vertex(goal_key)
-        print("Goal: 1, 15")
-        t = a_star(G, start, goal)
+        t = a_star(self.real_graph, start, goal)
         self.path = list(reversed(t))
-        return goal, G
+        
+        return goal
 
-    def move(self, goal, G):
-        i = 0
-        goal_pose = goal.get_xy(self.mapsize)
+    def move(self, goal):
+        i = 1
+        goal_pose = goal.get_xy(self.world_size)
         while (self.robot.posx, self.robot.posy) != goal_pose:
-            if self.optimal == False and np.random.uniform() <= 0.2:
+            if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
-                self.move_helper(coord, G)
+                self.move_helper(coord)
 
                 i = 0
-                start = G.get_vertex(G.get_key(self.robot.posx, self.robot.posy))
+                start = self.real_graph.get_vertex(self.real_graph.get_key(self.robot.posx, self.robot.posy))
                 start.parent = -1
-                t = a_star(G, start, goal)
+                t = a_star(self.real_graph, start, goal)
                 self.path = list(reversed(t))
 
             else:
                 coord = self.path[i]
-                self.move_helper(coord, G)
+                self.move_helper(coord)
                 i += 1
 
 
-    def move_helper(self, coord, G):
-        (i, j) = coord
-        (x, y) = (i, j)
+    def move_helper(self, coord):
+        (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        print(x, y)
-        node = G.get_vertex(G.get_key(x, y))
-        print((x,y), (self.robot.posx, self.robot.posy))
+        node = self.real_graph.get_vertex(self.real_graph.get_key(x, y))
+        print("Current position:", (self.robot.posx, self.robot.posy))
+        print("Intended position:", (x,y))
 
         if direction == (1, 0): #right
             if self.heading == 0:
@@ -164,10 +174,13 @@ class HumanAgent():
                     self.robot.forward()
                 self.heading = 270
 
-            if node.cell_type != "Wall": self.robot.posy -= 1
+            if node.cell_type != "Wall":
+                self.robot.posy -= 1
 
 
 
 if __name__ == "__main__":
+    # sys.argv: 0=name, 1=knowledge, 2=optimal
+    # Agent = HumanAgent(sys.argv[1], sys.argv[2])
     Agent = HumanAgent()
     Agent.run()
