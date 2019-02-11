@@ -254,6 +254,26 @@ class PlanningAgent():
     def move(self):
         return
 
+    def removeEdge(self, key_a, key_b):
+        vertex_a_abstract = self.abstract_graph.get_vertex(key_a)
+        vertex_a_real = self.real_graph.get_vertex(key_a)
+
+        real_neighbors = vertex_a_real.get_neighbors()
+        abstract_neighbors = vertex_a_abstract.get_neighbors()
+
+        abstract_direction = 0
+        for key, info in abstract_neighbors.items():
+            if key == key_b:
+                abstract_direction = info[0]
+
+        real_neighbor_key = -1
+        for key, info in real_neighbors.items():
+            if info[0] == abstract_direction:
+                real_neighbor_key = key
+
+        self.robot.removeEdge(key_a, real_neighbor_key)
+
+
 
 if __name__ == "__main__":
     Agent = PlanningAgent()

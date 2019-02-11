@@ -32,10 +32,10 @@
 
 # Python 2 and 3 compatibility
 from __future__ import absolute_import, division, print_function
-try:
-    input = raw_input  # Python 3 style input()
-except:
-    pass
+# try:
+#     input = raw_input  # Python 3 style input()
+# except:
+#     pass
 
 try:
     # Python 3 tkinter
@@ -114,9 +114,9 @@ class GridWorldSim(tk.Tk):
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
         self.openWorld(self.defaultWorld)
-        self.humanGraph = path_planning.Graph()
-        self.simGraph = path_planning.Graph()
-        self.simGraph.setup_graph(self.world, self.world_size)
+        self.human_graph = path_planning.Graph()
+        self.real_graph = path_planning.Graph()
+        self.real_graph.setup_graph(self.world, self.world_size)
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -231,9 +231,27 @@ class GridWorldSim(tk.Tk):
     # update the copy of the human graph from serialized object
     def updateHumanGraph(self, serializedGraph):
         sys.modules['path_planning'] = path_planning
-        self.humanGraph = pickle.loads(serializedGraph)
+        self.human_graph = pickle.loads(serializedGraph)
         print("Updated human graph")
         return "OK"
+
+    def removeEdge(self, key_a, key_b):
+        self.removeSingleEdge(key_a, key_b)
+        self.removeSingleEdge(key_b, key_a)
+        return "OK"
+
+    def removeSingleEdge(self, from_key, to_key):
+        # pull out neighbors of from vertex
+        neighbors_from = self.real_graph.get_vertex(from_key).get_neighbors()
+
+        # remove neighbor with matching key
+        for key in neighbors_from.keys():
+            if key == to_key:
+                del neighbors_from[key]
+                break
+
+        print("Removed edges between keys: ", (from_key, to_key))
+
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -545,7 +563,9 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "M":
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 elif msg[0] == "A":
-                    rmsg = pickle.dumps(copy.deepcopy(self.humanGraph), protocol=2)
+                    rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
+                elif msg[0] == "E":
+                    rmsg = self.removeEdge(key_a=msg[2], key_b=msg[3])
                 else:
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:

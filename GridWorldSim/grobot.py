@@ -119,6 +119,9 @@ class GRobot():
     def modifyCellLook(self, x, y, cell_type):
         return self._send("M " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)
 
+    def removeEdge(self, key_a, key_b):
+        return self._send("E " + self.rname + " " + str(key_a) + " " + str(key_b))
+
 
 
 def demo():
