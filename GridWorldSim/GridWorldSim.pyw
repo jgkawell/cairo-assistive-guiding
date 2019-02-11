@@ -221,6 +221,7 @@ class GridWorldSim(tk.Tk):
     # change the look of a cell WITHOUT changing its contents
     def modifyCellLook(self, x, y, cell_type):
         self.fillGrid(x, y, cell_type)
+        return "OK"
 
     # change the look of a cell AND change its contents
     def modifyCell(self, x, y, cell_type):
@@ -544,7 +545,7 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "M":
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 elif msg[0] == "A":
-                    rmsg = pickle.dumps(copy.deepcopy(self.humanGraph))
+                    rmsg = pickle.dumps(copy.deepcopy(self.humanGraph), protocol=2)
                 else:
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:

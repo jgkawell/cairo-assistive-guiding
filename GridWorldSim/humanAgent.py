@@ -36,8 +36,6 @@ class HumanAgent():
 
         # get file name from simulator
         file_name = self.robot.getFile()
-        # if file_name[0] == ".":
-        #     file_name = "../" + file_name
 
         # import world
         self.world = pickle.load(open(file_name, 'rb'))
@@ -64,12 +62,12 @@ class HumanAgent():
                     self.empty_states.append((i,j))
 
     def sendGraph(self):
-        serialized_graph = pickle.dumps(copy.deepcopy(self.real_graph))
+        serialized_graph = pickle.dumps(copy.deepcopy(self.real_graph), protocol=2)
         self.robot._send(serialized_graph, "byte")
 
     def run(self):
         goal = self.plan()
-        # self.move(goal)
+        self.move(goal)
 
     def plan(self):
         # generate graph world
