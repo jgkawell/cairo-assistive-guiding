@@ -71,12 +71,13 @@ class GRobot():
             else:
                 rmsg = "msg type error"
             if rmsg == "": rmsg = "Warning: Receieved Data error"
-        except:
-            print("Cannot connect to simulator")
+        except Exception as e:
+            print(str(e))
+            print("Could not send message")
             print("Please make sure Simulator is running")
             exit()
 
-            
+
 
         return rmsg
 
@@ -97,6 +98,9 @@ class GRobot():
 
     def forward(self):
         return self._send("F " + self.rname)
+
+    def getGraph(self):
+        return self._send("A" + self.rname)
 
     def getFile(self):
         msg = self._send("G " + self.rname)
@@ -145,4 +149,3 @@ def demo2():
 if __name__ == "__main__":
     demo()
     print("Finished")
-

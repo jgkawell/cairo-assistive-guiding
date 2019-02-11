@@ -94,7 +94,7 @@ class GridWorldSim(tk.Tk):
         self.speedSlider.pack(side=tk.RIGHT)
         self.speedLabel = tk.Label(text="Speed")
         self.speedLabel.pack(side=tk.RIGHT)
-        
+
         # Add dummy turtle as hidden to set up drawing area
         # changes canvas coords! (0,0) now in middle
         self.robot1 = rbt.RawTurtle(self.canvas)
@@ -110,6 +110,7 @@ class GridWorldSim(tk.Tk):
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
         self.openWorld(self.defaultWorld)
+        self.humanGraph = None
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -152,7 +153,7 @@ class GridWorldSim(tk.Tk):
     def drawWorld(self):
         # Draws the grid and labels
         # XYaxis lines, labels
-        
+
         # Vertical lines
         self.canvas.delete("all")
         count = 0
@@ -211,7 +212,7 @@ class GridWorldSim(tk.Tk):
             self.fillGrid(x, y, None)
             self.world[x][y] = None
 
-    # change the look of a cell WITHOUT changing its contents  
+    # change the look of a cell WITHOUT changing its contents
     def modifyCellLook(self, x, y, cell_type):
         self.fillGrid(x, y, cell_type)
 
@@ -220,7 +221,7 @@ class GridWorldSim(tk.Tk):
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
 
-        
+
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -316,7 +317,7 @@ class GridWorldSim(tk.Tk):
         else:
             # Remove "old" robot from World
             self.world[self.maptoX(self.robots[robname].xcor())][self.maptoY(self.robots[robname].ycor())] = None
-            
+
         # Robot shape/colour
         if rshape == "None":  # Can provide own shape def
             # Otherwise use standard robot shape
@@ -434,6 +435,33 @@ class GridWorldSim(tk.Tk):
         else:
             return (self.world[x][y], x, y)
 
+    def forwardGraph(self):
+        # Send message and get respose from Simulator
+        try:
+            # The simulator IP is on localhost, maybe to remote PC later?
+            if type(msg)==str:
+                self.tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # Repeated runs can sometimes hang up here, because
+                # the socket hasn't been released by the kernel
+                # So this tells the socket to reuse the old one if it exists
+                self.tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.tcpSock.connect ((hostname, port))# (hostname,portno))
+                self.tcpSock.send(msg.encode('utf-8'))
+
+                tries=1
+                rmsg=""
+                while rmsg=="" and tries > 0:
+                    rmsg = rmsg + self.tcpSock.recv(4096).decode('utf-8')
+                    if rmsg!="":tries -= 1
+                self.tcpSock.close()
+            else:
+                rmsg = "msg type error"
+            if rmsg == "": rmsg = "Warning: Receieved Data error"
+        except:
+            print("Tried to send graph but failed")
+            print("Please make sure Simulator is running")
+            exit()
+
     def tcpServer(self):
         """
         TCIP server, opens a TC IP socket and passes the message on to be executed and
@@ -516,6 +544,13 @@ class GridWorldSim(tk.Tk):
                     rmsg = self.cur_file
                 elif msg[0] == "M":
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
+                elif msg[0] == "H":
+                    print("Got the graph")
+                    serializedGraph = msg[1]
+                    self.humanGraph = pickle.loads(eval(serializedGraph))
+                    print("Successfully updated local graph")
+                elif msg[0] == "A":
+                    self.forwardGraph()
                 else:
                     rmsg = "Unknown command"
             except Exception as e:
@@ -529,7 +564,7 @@ class GridWorldSim(tk.Tk):
             # Wait here for step timer
             while self.wait == True:
                 sleep(0.01)
-                
+
             cli_sock.send(str(rmsg).encode('utf-8'))
 
         cli_sock.close()

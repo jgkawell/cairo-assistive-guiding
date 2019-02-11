@@ -30,7 +30,8 @@ class HumanAgent():
         self.optimal = optimal
         self.optimality_constant = 0.2
         self.reward_removal_constant = 0.5
-        
+        self.real_graph = None
+
 
         # get file name from simulator
         file_name = self.robot.getFile()
@@ -52,14 +53,19 @@ class HumanAgent():
                     self.world[i][j] = None
                 elif cell_type == "Reward":
                     if self.knowledge == 0 and np.random.uniform() >= self.reward_removal_constant:
-                        # remove rewards randomly                        
+                        # remove rewards randomly
                         self.world[i][j] = None
                     else:
                         # save reward state for goal generation
                         self.reward_states.append((i,j))
                 elif cell_type == None:
                     # save empy states for start generation
-                    self.empty_states.append((i,j))       
+                    self.empty_states.append((i,j))
+
+    def sendGraph(self):
+        serialized_graph = pickle.dumps(self.real_graph)
+        print("Sending Graph ", self.real_graph)
+        self.robot._send("H " + str(serialized_graph))
 
     def run(self):
         goal = self.plan()
@@ -69,7 +75,7 @@ class HumanAgent():
         # generate graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
-
+        self.sendGraph()
         # generate start and goal states
         start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
         goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
@@ -87,7 +93,7 @@ class HumanAgent():
         #path plan with a*
         t = a_star(self.real_graph, start, goal)
         self.path = list(reversed(t))
-        
+
         return goal
 
     def move(self, goal):

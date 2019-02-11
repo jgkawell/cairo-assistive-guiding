@@ -20,6 +20,7 @@ class PlanningAgent():
         self.robot = GRobot("PlanningAgent", colour="yellow")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
+        self.humanGraph = None
 
         # get file name from simulator
         file_name = self.robot.getFile()
@@ -28,7 +29,7 @@ class PlanningAgent():
 
         # import world
         new_world = pickle.load(open(file_name, 'rb'))
-        
+
         # take out the buffer walls if old map
         if len(new_world) == 34:
             self.world_size = len(new_world) - 3
@@ -46,19 +47,26 @@ class PlanningAgent():
     def run(self):
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
-
+        self.humanGraph = self.getHumanGraph()
+        print("Received Graph ", self.humanGraph)
+        print(self.humanGraph)
         self.plan()
         self.move()
 
-    # plan a path to execute 
+    def getHumanGraph(self):
+        serializedGraph = self.robot.getGraph()
+        print(serializedGraph)
+        return pickle.loads(eval(serializedGraph))
+
+    # plan a path to execute
     def plan(self):
         found_sol = False
         maxed = False
         level = 0
-        
+
         old_size = 0
         while not found_sol and not maxed:
-            
+
             # simplify for certain level
             new_size = self.simplifyWorld(old_size, level=level)
             level += 1
@@ -84,7 +92,7 @@ class PlanningAgent():
             key_list = self.generateInitialVertices()
             # generate the new edges between vertices
             self.generateEdges(key_list)
-            
+
         # other levels which adds in intermediate vertices
         else:
             # set distance limit for generating new vertices
@@ -111,7 +119,7 @@ class PlanningAgent():
         for vertex in self.real_graph:
             if len(vertex.get_neighbors()) > 2 or vertex.cell_type == "Reward":
                 # create new vertex
-                copy_vertex = copy.deepcopy(vertex)                    
+                copy_vertex = copy.deepcopy(vertex)
 
                 # add to key list for edge generation
                 key_list.append(vertex.key)
@@ -160,9 +168,9 @@ class PlanningAgent():
                             max_depth = int(abstract_distance/2)
                             if max_depth == 0:
                                 max_depth += 1
-                                
+
                             new_key = self.findAbstractNeighbor(start_key, real_key, cur_depth=1, max_depth=max_depth)
-                            
+
                             # error check
                             if new_key == -1:
                                 print("ERROR")
@@ -182,18 +190,18 @@ class PlanningAgent():
             key_list.append(vertex.key)
 
         return key_list
-            
+
     def generateEdges(self, key_list):
         # iterate through list of keys creating edges for each one
         for cur_key in key_list:
             # copy neighbor list
             real_neighbors = self.real_graph.get_vertex(cur_key).get_neighbors()
-            
+
             # iterate through real neighbors to build edges with direction, distance, and valuation
             for neighbor_key, neighbor_info in real_neighbors.items():
                 # find info for new edge
                 new_key, new_distance, new_value = self.findEdgeInfo(cur_key, neighbor_key, distance=1, value=0)
-                
+
                 # make sure the key is valid
                 if new_key != -1:
                     # pull out the neighbor direction
@@ -246,7 +254,7 @@ class PlanningAgent():
 
     def move(self):
         return
-        
+
 
 if __name__ == "__main__":
     Agent = PlanningAgent()
