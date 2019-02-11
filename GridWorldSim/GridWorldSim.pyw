@@ -52,10 +52,14 @@ except:
 # Standard imports
 from threading import Thread
 from time import sleep
+import path_planning
 import turtle as rbt
 import pickle
 import socket
 import atexit
+import sys
+import struct
+import copy
 
 
 class GridWorldSim(tk.Tk):
@@ -110,7 +114,9 @@ class GridWorldSim(tk.Tk):
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
         self.openWorld(self.defaultWorld)
-        self.humanGraph = None
+        self.humanGraph = path_planning.Graph()
+        self.simGraph = path_planning.Graph()
+        self.simGraph.setup_graph(self.world, self.world_size)
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -221,7 +227,12 @@ class GridWorldSim(tk.Tk):
         self.fillGrid(x, y, cell_type)
         self.world[x][y] = cell_type
 
-
+    # update the copy of the human graph from serialized object
+    def updateHumanGraph(self, serializedGraph):
+        sys.modules['path_planning'] = path_planning
+        self.humanGraph = pickle.loads(serializedGraph)
+        print("Updated human graph")
+        return "OK"
 
     def fillGrid(self, x, y, cell_type):
         if cell_type == None:
@@ -435,33 +446,6 @@ class GridWorldSim(tk.Tk):
         else:
             return (self.world[x][y], x, y)
 
-    def forwardGraph(self):
-        # Send message and get respose from Simulator
-        try:
-            # The simulator IP is on localhost, maybe to remote PC later?
-            if type(msg)==str:
-                self.tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # Repeated runs can sometimes hang up here, because
-                # the socket hasn't been released by the kernel
-                # So this tells the socket to reuse the old one if it exists
-                self.tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.tcpSock.connect ((hostname, port))# (hostname,portno))
-                self.tcpSock.send(msg.encode('utf-8'))
-
-                tries=1
-                rmsg=""
-                while rmsg=="" and tries > 0:
-                    rmsg = rmsg + self.tcpSock.recv(4096).decode('utf-8')
-                    if rmsg!="":tries -= 1
-                self.tcpSock.close()
-            else:
-                rmsg = "msg type error"
-            if rmsg == "": rmsg = "Warning: Receieved Data error"
-        except:
-            print("Tried to send graph but failed")
-            print("Please make sure Simulator is running")
-            exit()
-
     def tcpServer(self):
         """
         TCIP server, opens a TC IP socket and passes the message on to be executed and
@@ -515,14 +499,29 @@ class GridWorldSim(tk.Tk):
 
     def dispatch(self, cli_sock):
         # message variables
-        msg = ""
-        rmsg = ""
+        msg = "$"
+        rmsg = None
 
-        # Recive input and pass to eval
-        msg = cli_sock.recv(50).decode('utf-8')
+        # recieve input by looping to avoid data loss
+        buffer_size = 4096
+        data = b''
+        while True:
+            packet = cli_sock.recv(buffer_size)
+            data += packet
+            if len(packet) < buffer_size:
+                break
+                                
+        message = data
 
-        if (msg != "Q"):
-            msg = msg.split()  # parse
+        # attempt to parse string
+        try:
+            msg = message.decode("utf-8")
+        except:
+            print("Not string")
+
+        if msg != "Q":
+            # split string msg into parts
+            msg = msg.split()
 
             # Do robot commands
             try:
@@ -544,15 +543,10 @@ class GridWorldSim(tk.Tk):
                     rmsg = self.cur_file
                 elif msg[0] == "M":
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
-                elif msg[0] == "H":
-                    print("Got the graph")
-                    serializedGraph = msg[1]
-                    self.humanGraph = pickle.loads(eval(serializedGraph))
-                    print("Successfully updated local graph")
                 elif msg[0] == "A":
-                    self.forwardGraph()
+                    rmsg = pickle.dumps(copy.deepcopy(self.humanGraph))
                 else:
-                    rmsg = "Unknown command"
+                    rmsg = self.updateHumanGraph(message)
             except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
@@ -565,7 +559,10 @@ class GridWorldSim(tk.Tk):
             while self.wait == True:
                 sleep(0.01)
 
-            cli_sock.send(str(rmsg).encode('utf-8'))
+            if type(rmsg)==str:
+                cli_sock.send(str(rmsg).encode('utf-8'))
+            else:
+                cli_sock.send(rmsg)
 
         cli_sock.close()
         return

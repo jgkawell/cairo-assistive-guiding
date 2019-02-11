@@ -18,6 +18,7 @@ from random import randint
 from path_planning import *
 import pickle
 import numpy as np
+import copy
 
 class HumanAgent():
 
@@ -35,8 +36,8 @@ class HumanAgent():
 
         # get file name from simulator
         file_name = self.robot.getFile()
-        if file_name[0] == ".":
-            file_name = "../" + file_name
+        # if file_name[0] == ".":
+        #     file_name = "../" + file_name
 
         # import world
         self.world = pickle.load(open(file_name, 'rb'))
@@ -63,19 +64,19 @@ class HumanAgent():
                     self.empty_states.append((i,j))
 
     def sendGraph(self):
-        serialized_graph = pickle.dumps(self.real_graph)
-        print("Sending Graph ", self.real_graph)
-        self.robot._send("H " + str(serialized_graph))
+        serialized_graph = pickle.dumps(copy.deepcopy(self.real_graph))
+        self.robot._send(serialized_graph, "byte")
 
     def run(self):
         goal = self.plan()
-        self.move(goal)
+        # self.move(goal)
 
     def plan(self):
         # generate graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
         self.sendGraph()
+
         # generate start and goal states
         start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
         goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]

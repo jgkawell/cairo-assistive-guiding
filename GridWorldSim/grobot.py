@@ -32,6 +32,7 @@ import socket
 from time import sleep
 import atexit
 import sys
+import struct
 
 hostname="localhost" # Set to Tutors PC IP address to shown on Projector etc?
 port = 9001          # Possibility of various clients running own robots
@@ -49,28 +50,38 @@ class GRobot():
         msg = "N "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape
         self._send(msg)
 
-    def _send(self, msg):
+    def _send(self, msg, send_type="string", rec_type="string"):
         # Send message and get respose from Simulator
         try:
-            # The simulator IP is on localhost, maybe to remote PC later?
-            if type(msg)==str:
-                self.tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                # Repeated runs can sometimes hang up here, because
-                # the socket hasn't been released by the kernel
-                # So this tells the socket to reuse the old one if it exists
-                self.tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.tcpSock.connect ((hostname, port))# (hostname,portno))
-                self.tcpSock.send(msg.encode('utf-8'))
+            self.tcpSock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.tcpSock.connect ((hostname, port))
 
-                tries=1
-                rmsg=""
-                while rmsg=="" and tries > 0:
-                    rmsg = rmsg + self.tcpSock.recv(100).decode('utf-8')
-                    if rmsg!="":tries -= 1
-                self.tcpSock.close()
+            # The simulator IP is on localhost, maybe to remote PC later?
+            if send_type == "string":
+                msg = msg.encode('utf-8')
+            
+            self.tcpSock.send(msg)
+
+            # recieve input by looping to avoid data loss
+            buffer_size = 4096
+            data = b''
+            while True:
+                packet = self.tcpSock.recv(buffer_size)
+                data += packet
+                if len(packet) < buffer_size and len(data) > 0:
+                    break
+
+            if rec_type == "string":        
+                rmsg = data.decode("utf-8")
             else:
-                rmsg = "msg type error"
-            if rmsg == "": rmsg = "Warning: Receieved Data error"
+                rmsg = data
+
+            self.tcpSock.close()
+
+            if rmsg == "":
+                rmsg = "Warning: Receieved Data error"
+        
         except Exception as e:
             print(str(e))
             print("Could not send message")
@@ -100,11 +111,10 @@ class GRobot():
         return self._send("F " + self.rname)
 
     def getGraph(self):
-        return self._send("A" + self.rname)
+        return self._send("A " + self.rname, rec_type="byte")
 
     def getFile(self):
-        msg = self._send("G " + self.rname)
-        return msg.encode("utf-8")
+        return self._send("G " + self.rname)
 
     def modifyCellLook(self, x, y, cell_type):
         return self._send("M " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)

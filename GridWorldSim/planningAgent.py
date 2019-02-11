@@ -7,10 +7,12 @@ except:
 
 # Setup imports
 from grobot import GRobot
-from path_planning import *
+from path_planning import Graph
+import path_planning
 import pickle
 import time
 import copy
+import sys
 
 
 class PlanningAgent():
@@ -24,8 +26,8 @@ class PlanningAgent():
 
         # get file name from simulator
         file_name = self.robot.getFile()
-        if file_name[0] == ".":
-            file_name = "../" + file_name
+        # if file_name[0] == ".":
+        #     file_name = "../" + file_name
 
         # import world
         new_world = pickle.load(open(file_name, 'rb'))
@@ -54,9 +56,8 @@ class PlanningAgent():
         self.move()
 
     def getHumanGraph(self):
-        serializedGraph = self.robot.getGraph()
-        print(serializedGraph)
-        return pickle.loads(eval(serializedGraph))
+        sys.modules['path_planning'] = path_planning
+        return pickle.loads(self.robot.getGraph())
 
     # plan a path to execute
     def plan(self):

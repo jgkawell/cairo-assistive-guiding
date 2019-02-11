@@ -24,8 +24,8 @@ class DemoAgent():
        
         # get file name from simulator
         file_name = self.robot.getFile()
-        if file_name[0] == ".":
-            file_name = "../" + file_name
+        # if file_name[0] == ".":
+        #     file_name = "../" + file_name
 
         # import world
         new_world = pickle.load(open(file_name, 'rb'))
