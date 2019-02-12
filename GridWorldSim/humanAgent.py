@@ -95,10 +95,38 @@ class HumanAgent():
 
         return goal
 
+    def removeEdge(self, key_a, key_b):
+        self.removeSingleEdge(key_a, key_b)
+        self.removeSingleEdge(key_b, key_a)
+        return "Human OK"
+
+    def removeSingleEdge(self, from_key, to_key):
+        # pull out neighbors of from vertex
+        neighbors_from = self.real_graph.get_vertex(from_key).get_neighbors()
+
+        # remove neighbor with matching key
+        for key in neighbors_from.keys():
+            if key == to_key:
+                del neighbors_from[key]
+                break
+
+        print("Human removed edges between keys: ", (from_key, to_key))
+
+
+
     def move(self, goal):
         i = 1
+        t = []
         goal_pose = goal.get_xy(self.world_size)
         while (self.robot.posx, self.robot.posy) != goal_pose:
+            val = self.robot.look()
+            if len(val) > 5:#1st 5 elems are adjacent cell info, everything after is deleted key info
+                for idx in range(6, len(val)):
+                    (key_a, key_b) = val[idx]
+                    self.remove_edge()
+                t = a_star(self.real_graph, start, goal)
+
+
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
