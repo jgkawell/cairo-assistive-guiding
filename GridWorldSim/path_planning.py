@@ -107,14 +107,15 @@ class Path():
         self.vertex_keys = vertex_keys
         self.distance = distance
         self.value = value
+        self.total = self.calculate_total()
 
     def add_vertex(self, new_key, new_distance, new_value):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.value += new_value
 
-    def get_total(self):
-        return self.value - self.distance
+    def calculate_total(self):
+        return self.value - (0.01 * self.distance)
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
@@ -173,6 +174,8 @@ def find_paths(graph, start_key, goal_keys, value_limit):
     # start recursion to build out solution path list
     recurse_path_finding(graph, start_vertex, goal_keys, value_limit, cur_path, paths)
 
+    paths.sort(key=lambda x: x.total, reverse=True)
+
     return paths
 
 def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, paths):
@@ -194,7 +197,7 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, pa
             # found solution
             if key in goal_keys:
                 # if the total value is greater than limit, add to paths
-                if new_path.get_total() > value_limit:
+                if new_path.total > value_limit:
                     paths.append(new_path)
             else:
                 # pull out new vertex and pass it for the recursion

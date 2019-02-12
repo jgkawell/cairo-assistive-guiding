@@ -90,7 +90,7 @@ class PlanningAgent():
 
         print("Found paths: ", len(paths))
         for path in paths:
-            print("(Distance, Value): ", (path.distance, path.value))
+            print("(Distance, Value, Total): ", (path.distance, path.value, path.total))
 
         return False
 
@@ -233,7 +233,7 @@ class PlanningAgent():
             # iterate through real neighbors to build edges with direction, distance, and valuation
             for neighbor_key, neighbor_info in real_neighbors.items():
                 # find info for new edge
-                new_key, new_distance, new_value = self.findEdgeInfo(cur_key, neighbor_key, distance=1, value=0)
+                new_key, new_distance, new_value = self.findEdgeInfo(cur_key, neighbor_key, distance=0, value=0)
 
                 # make sure the key is valid
                 if new_key != -1:
@@ -246,13 +246,17 @@ class PlanningAgent():
     # recurses through path from vertex with key_a to max depth or another already defined vertex (whichever comes first)
     # returns a tuple = (key, distance, value) that represents the edge
     def findEdgeInfo(self, key_a, key_b, distance, value):
+        # pull out current vertex
+        cur_vertex = self.real_graph.get_vertex(key_b)
+        
         if key_b in self.abstract_graph.get_vertices():
             # if the key is already a vertex, return the vertex or the max depth has been reached
             # with the distance and value up to that point in the recursion
+            distance += 1
+            value += cur_vertex.value
             return (key_b, distance, value)
         else:
             # else keep recursing until either a vertex or deadend is found
-            cur_vertex = self.real_graph.get_vertex(key_b)
             neighbors = cur_vertex.get_neighbors()
             if len(neighbors) > 1:
                 for key_c in neighbors.keys():
