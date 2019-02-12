@@ -123,7 +123,7 @@ class HumanAgent():
             if len(val) > 5:#1st 5 elems are adjacent cell info, everything after is deleted key info
                 for idx in range(6, len(val)):
                     (key_a, key_b) = val[idx]
-                    self.remove_edge()
+                    self.removeEdge()
                 t = a_star(self.real_graph, start, goal)
 
 
