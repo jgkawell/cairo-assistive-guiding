@@ -22,35 +22,35 @@ class PlanningAgent():
         self.robot = GRobot("PlanningAgent", colour="yellow")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
-        self.humanGraph = None
+        self.human_graph = None
+        self.human_position = 1
+        self.value_limit = -sys.maxsize
+        self.reward_keys = []
 
         # get file name from simulator
         file_name = self.robot.getFile()
 
         # import world
-        new_world = pickle.load(open(file_name, 'rb'))
-
-        # take out the buffer walls if old map
-        if len(new_world) == 34:
-            self.world_size = len(new_world) - 3
-            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
-            for i in range(self.world_size):
-                for j in range(self.world_size):
-                    self.world[i][j] = new_world[i+1][j+1]
-        else:
-            self.world_size = len(new_world)
-            self.world = [[None] * (self.world_size) for i in range(self.world_size)]  # World map
-            for i in range(self.world_size):
-                for j in range(self.world_size):
-                    self.world[i][j] = new_world[i][j]
+        self.world = pickle.load(open(file_name, 'rb'))
+        self.world_size = len(self.world)
 
     def run(self):
+        # set up the real true graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
-        self.humanGraph = self.getHumanGraph()
-        print("Received Graph ", self.humanGraph)
-        print(self.humanGraph)
+        
+        # get reward keys
+        for vertex in self.real_graph:
+            if vertex.cell_type == "Reward":
+                self.reward_keys.append(vertex.key)
+
+        # get human graph from sim
+        self.human_graph = self.getHumanGraph()
+
+        # plan action
         self.plan()
+
+        # execute action
         self.move()
 
     def getHumanGraph(self):
@@ -77,10 +77,44 @@ class PlanningAgent():
                 old_size = new_size
 
             # find solution path
-            found_sol = self.findSolution()
+            found_sol = self.findSolution(self.human_position)
 
             # pauses
-            time.sleep(1)
+            time.sleep(0.25)
+
+    
+
+    def findSolution(self, start_key):
+
+        paths = path_planning.find_paths(self.abstract_graph, start_key, self.reward_keys, self.value_limit)
+
+        print("Found paths: ", len(paths))
+        for path in paths:
+            print("(Distance, Value): ", (path.distance, path.value))
+
+        return False
+
+    def move(self):
+        return
+
+    def removeEdge(self, key_a, key_b):
+        vertex_a_abstract = self.abstract_graph.get_vertex(key_a)
+        vertex_a_real = self.real_graph.get_vertex(key_a)
+
+        real_neighbors = vertex_a_real.get_neighbors()
+        abstract_neighbors = vertex_a_abstract.get_neighbors()
+
+        abstract_direction = 0
+        for key, info in abstract_neighbors.items():
+            if key == key_b:
+                abstract_direction = info[0]
+
+        real_neighbor_key = -1
+        for key, info in real_neighbors.items():
+            if info[0] == abstract_direction:
+                real_neighbor_key = key
+
+        self.robot.removeEdge(key_a, real_neighbor_key)
 
     def simplifyWorld(self, world_size, level):
         # first level that just pulls out intersections
@@ -247,33 +281,6 @@ class PlanningAgent():
             else:
                 # return a bad key to signal deadend
                 return -1
-
-    def findSolution(self):
-        return False
-
-    def move(self):
-        return
-
-    def removeEdge(self, key_a, key_b):
-        vertex_a_abstract = self.abstract_graph.get_vertex(key_a)
-        vertex_a_real = self.real_graph.get_vertex(key_a)
-
-        real_neighbors = vertex_a_real.get_neighbors()
-        abstract_neighbors = vertex_a_abstract.get_neighbors()
-
-        abstract_direction = 0
-        for key, info in abstract_neighbors.items():
-            if key == key_b:
-                abstract_direction = info[0]
-
-        real_neighbor_key = -1
-        for key, info in real_neighbors.items():
-            if info[0] == abstract_direction:
-                real_neighbor_key = key
-
-        self.robot.removeEdge(key_a, real_neighbor_key)
-
-
 
 if __name__ == "__main__":
     Agent = PlanningAgent()
