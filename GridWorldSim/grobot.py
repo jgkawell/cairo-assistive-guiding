@@ -57,7 +57,7 @@ class GRobot():
             self.tcpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.tcpSock.connect ((hostname, port))
 
-            # The simulator IP is on localhost, maybe to remote PC later?
+            # if sending a string, encode it
             if send_type == "string":
                 msg = msg.encode('utf-8')
             

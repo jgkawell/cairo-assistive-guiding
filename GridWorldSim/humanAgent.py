@@ -89,9 +89,8 @@ class HumanAgent():
 
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
-        #path plan with a*
-        t = a_star(self.real_graph, start, goal)
-        self.path = list(reversed(t))
+        #path plan with A*
+        self.path = a_star(self.real_graph, start, goal)
 
         return goal
 

@@ -8,6 +8,7 @@ except:
 # Setup imports
 from grobot import GRobot
 from path_planning import Graph
+from timeit import default_timer as timer
 import path_planning
 import pickle
 import time
@@ -26,6 +27,7 @@ class PlanningAgent():
         self.human_position = 1
         self.value_limit = -sys.maxsize
         self.reward_keys = []
+        self.show_abstraction = False
 
         # get file name from simulator
         file_name = self.robot.getFile()
@@ -66,6 +68,8 @@ class PlanningAgent():
         old_size = 0
         while not found_sol and not maxed:
 
+            start = timer()
+
             # simplify for certain level
             new_size = self.simplifyWorld(old_size, level=level)
             level += 1
@@ -79,20 +83,63 @@ class PlanningAgent():
             # find solution path
             found_sol = self.findSolution(self.human_position)
 
+            end = timer()
+            total = end - start
+            print("Took: ", total)
+
             # pauses
             time.sleep(0.25)
 
-    
-
     def findSolution(self, start_key):
+        # find all solution paths and rank them by total value
+        best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.reward_keys, self.value_limit)
+        best_paths.sort(key=lambda x: x.total, reverse=True)
 
-        paths = path_planning.find_paths(self.abstract_graph, start_key, self.reward_keys, self.value_limit)
+        # pull out the human path (the one with the shortest distance)
+        human_path = copy.deepcopy(sorted(best_paths, key=lambda x: x.distance, reverse=False)[0])
 
-        print("Found paths: ", len(paths))
-        for path in paths:
-            print("(Distance, Value, Total): ", (path.distance, path.value, path.total))
+        # find paths with too low of a total value
+        remove_list = []
+        for path in best_paths:
+            if path.total < 0:
+                remove_list.append(path)
+        
+        # remove paths with to low of a total value
+        for path in remove_list:
+            best_paths.remove(path)
+
+        # print best paths info
+        print("Found paths: ", len(best_paths))
+        for path in best_paths:
+            print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
+
+        # find the locations for obstacles
+        for path in best_paths:
+            key, direction = self.findDivergence(path.vertex_keys, human_path.vertex_keys)
+            print("(Key, Direction): ", (self.abstract_graph.get_vertex(key).get_xy(self.world_size), direction))
+
+        # print human path info
+        print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
         return False
+
+    def findDivergence(self, robot_path, human_path):
+        key = 0
+        direction = 0
+
+        for i in range(len(robot_path)):
+            key_r = robot_path[i]
+            key_h = human_path[i]
+
+            if key_r != key_h:
+                prev_h = self.abstract_graph.get_vertex(human_path[i-1])
+                key = prev_h.key
+                direction = prev_h.get_neighbors()[key_h][0]
+                break
+
+        return key, direction
+
+
 
     def move(self):
         return
@@ -142,7 +189,7 @@ class PlanningAgent():
         for vertex in self.abstract_graph:
             size += 1
             x, y = vertex.get_xy(self.world_size)
-            self.robot.modifyCellLook(x, y, "Door")
+            if self.show_abstraction: self.robot.modifyCellLook(x, y, "Door")
 
         return size
 

@@ -30,7 +30,7 @@ class Vertex():
         if cell_type == "Reward":
             self.value = 1
         elif cell_type == "Hazard":
-            self.value = -0.5
+            self.value = -0.25
 
     # adds a neighbor to the vertex with a distance and value across the edge
     # direction: 1=N, 2=E, 3=S, 4=W
@@ -113,9 +113,10 @@ class Path():
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.value += new_value
+        self.total = self.calculate_total()
 
     def calculate_total(self):
-        return self.value - (0.01 * self.distance)
+        return self.value - (0.001 * self.distance)
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
@@ -146,22 +147,29 @@ def a_star(graph, start, goal):
 
         if current == goal: break
 
-        neighbors = current.get_neighbors().keys()
-        for key in neighbors:
+        neighbors = current.get_neighbors()
+        for key, info in neighbors.items():
             neighbor = graph.get_vertex(key)
-            cost = current.dist + 1 - neighbor.value #assume uniform cost across all edges
-            if cost < neighbor.dist and neighbor in frontier_tracker: #found a better path to neighbor
+            neighbor_distance = info[1]
+            cost = current.dist + neighbor_distance #assume uniform cost across all edges
+            
+            #found a better path to neighbor
+            if cost < neighbor.dist and neighbor in frontier_tracker: 
                 frontier_tracker.pop(neighbor)
+            
             if cost < neighbor.dist and neighbor in cost_so_far:
                 cost_so_far.pop(neighbor)
+
             if neighbor not in frontier_tracker and neighbor not in cost_so_far:
                 neighbor.dist = cost
                 frontier_tracker[neighbor] = cost
                 priority = cost + heuristic(goal.get_xy(graph.world_size), neighbor.get_xy(graph.world_size))
                 frontier.put(neighbor, priority)
                 neighbor.parent = current.key
-                
-    return trace(goal, graph)
+
+    # reverse and convert to list
+    path = list(reversed(trace(goal, graph)))
+    return path 
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects
@@ -173,8 +181,6 @@ def find_paths(graph, start_key, goal_keys, value_limit):
 
     # start recursion to build out solution path list
     recurse_path_finding(graph, start_vertex, goal_keys, value_limit, cur_path, paths)
-
-    paths.sort(key=lambda x: x.total, reverse=True)
 
     return paths
 
