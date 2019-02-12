@@ -51,6 +51,8 @@ class PlanningAgent():
         print("Received Graph ", self.humanGraph)
         print(self.humanGraph)
         self.plan()
+        keys = list(self.abstract_graph.get_vertices())
+        self.removeEdge(keys[1], keys[2])
         self.move()
 
     def getHumanGraph(self):

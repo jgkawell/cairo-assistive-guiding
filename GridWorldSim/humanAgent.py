@@ -121,9 +121,14 @@ class HumanAgent():
         while (self.robot.posx, self.robot.posy) != goal_pose:
             val = self.robot.look()
             if len(val) > 5:#1st 5 elems are adjacent cell info, everything after is deleted key info
-                for idx in range(6, len(val)):
+                print("Graph has changed")
+                for idx in range(5, len(val)):
+                    print("Updating Graph")
                     (key_a, key_b) = val[idx]
-                    self.removeEdge()
+                    self.removeEdge(key_a, key_b)
+                print("Replanning...")
+                start = self.real_graph.get_vertex(self.real_graph.get_key(self.robot.posx, self.robot.posy))
+                start.parent = -1
                 t = a_star(self.real_graph, start, goal)
 
 

@@ -427,6 +427,7 @@ class GridWorldSim(tk.Tk):
 
     def look(self, rname):
         if rname in self.robots:
+            val=[]
             posx = self.maptoX(self.robots[rname].xcor())
             posy = self.maptoY(self.robots[rname].ycor())
             heading = int(self.robots[rname].heading())
@@ -455,10 +456,9 @@ class GridWorldSim(tk.Tk):
                     self.fillGrid(px, py, self.world[px][py])
 
             if(len(self.removed_edges) > 0):
-                for key_a, key_b in self.removed_edges:
-                        del self.removed_edges[key_a]
-                        val.append((key_a, key_b))
-
+                for key_a, key_b in self.removed_edges.items():
+                        val.append((int(key_a), int(key_b)))
+                self.removed_edges.clear()
 
             return val
 
@@ -572,14 +572,15 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "A":
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "E":
-                    rmsg = self.removeEdge(key_a=msg[2], key_b=msg[3])
-                    self.removed_edges[key_a] = key_b
+                    rmsg = self.removeEdge(key_a=int(msg[2]), key_b=int(msg[3]))
+                    self.removed_edges[msg[2]] = msg[3]
                 else:
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
                 print("EXCEPTION: " + str(e))
+                print(msg)
 
             if rmsg == None:
                 rmsg == "None"
