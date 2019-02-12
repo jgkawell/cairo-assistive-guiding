@@ -117,6 +117,7 @@ class GridWorldSim(tk.Tk):
         self.human_graph = path_planning.Graph()
         self.real_graph = path_planning.Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
+        self.removed_edges = {}
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -453,6 +454,12 @@ class GridWorldSim(tk.Tk):
                     self.explored[px][py] = True
                     self.fillGrid(px, py, self.world[px][py])
 
+            if(len(self.removed_edges) > 0):
+                for key_a, key_b in self.removed_edges:
+                        del self.removed_edges[key_a]
+                        val.append((key_a, key_b))
+
+
             return val
 
         return "Robot name not found"
@@ -529,7 +536,7 @@ class GridWorldSim(tk.Tk):
             data += packet
             if len(packet) < buffer_size:
                 break
-                                
+
         message = data
 
         # attempt to parse string
@@ -566,6 +573,7 @@ class GridWorldSim(tk.Tk):
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "E":
                     rmsg = self.removeEdge(key_a=msg[2], key_b=msg[3])
+                    self.removed_edges[key_a] = key_b
                 else:
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:
