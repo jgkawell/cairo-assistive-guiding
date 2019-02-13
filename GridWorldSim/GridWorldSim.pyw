@@ -353,7 +353,6 @@ class GridWorldSim(tk.Tk):
         if rshape == "None":  # Can provide own shape def
             # Otherwise use standard robot shape
             self.shp.append(rbt.Shape("compound"))
-            # print(self.shp, len(self.shp)-1)# debug
             poly1 = ((0, 0), (10, -5), (0, 10), (-10, -5))
             self.shp[len(self.shp)-1].addcomponent(poly1, colour, "black")
             poly2 = ((0, 0), (10, -5), (-10, -5))
@@ -401,7 +400,6 @@ class GridWorldSim(tk.Tk):
             self.robots[rob_name].forward(20)
             posx = self.maptoX(self.robots[rob_name].xcor())
             posy = self.maptoY(self.robots[rob_name].ycor())
-            print((posx, posy))
 
             return "OK"
         else:

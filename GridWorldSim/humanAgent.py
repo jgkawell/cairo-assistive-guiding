@@ -122,7 +122,9 @@ class HumanAgent():
         while (self.robot.posx, self.robot.posy) != goal_pose:
             valid, changed = self.robot.look()
             
+            # found new world knowledge
             if changed:
+                print("New world knowledge!")
                 # update world knowledge
                 self.real_graph = self.getHumanGraph()
 
@@ -158,8 +160,7 @@ class HumanAgent():
     def move_helper(self, coord):
         (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        print("Current position:", (self.robot.posx, self.robot.posy))
-        print("Intended position:", (x, y))
+        print("Current, Intended:", (self.robot.posx, self.robot.posy), (x, y))
 
         # check for success
         msg = ""
