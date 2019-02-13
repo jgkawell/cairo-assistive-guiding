@@ -109,7 +109,7 @@ class GridWorldSim(tk.Tk):
         self.screen.onclick(self.clickGrid, btn=1)  # Mouse left button
 
         # Initialize default world
-        self.defaultWorld = "./Maps/fullOffice.map"
+        self.defaultWorld = "./Maps/MazeExtra.map"
         self.cur_file = self.defaultWorld # Save the current file for other agents to pull from
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
@@ -144,14 +144,14 @@ class GridWorldSim(tk.Tk):
 
     def toggleTrails(self):
         # Work in progress!
-        for robname in self.robots:
+        for rob_name in self.robots:
             if self.trails == True:
                 print("OFF")
-                self.robots[robname].penup()
-                self.robots[robname].clear()
+                self.robots[rob_name].penup()
+                self.robots[rob_name].clear()
             else:
                 print("ON")
-                self.robots[robname].pendown()
+                self.robots[rob_name].pendown()
         if self.trails == True:
             self.trails = False
         else:
@@ -305,8 +305,8 @@ class GridWorldSim(tk.Tk):
         filename = fd.asksaveasfilename(filetypes=[("World Files", "*.map")], initialdir=".")
         if filename != None:
             # remove robots from world!
-            for robname in list(self.robots.keys()):
-                xpos, ypos = self.getXYpos(robname)
+            for rob_name in list(self.robots.keys()):
+                xpos, ypos = self.getXYpos(rob_name)
                 self.world[xpos][ypos] = None
 
             # Then save!
@@ -338,16 +338,16 @@ class GridWorldSim(tk.Tk):
         self.explored = [[exploredValue] * (self.world_size) for i in range(self.world_size)]
         self.drawWorld()
 
-    def newRobot(self, robname="None",  posx=1, posy=1, colour="red", rshape="None"):
-        if robname == "None":
+    def newRobot(self, rob_name="None",  posx=1, posy=1, colour="red", rshape="None"):
+        if rob_name == "None":
             # create/use Anonymous robot. Can only do one!
-            robname = "anon"
+            rob_name = "anon"
 
-        if not robname in self.robots:
-            self.robots[robname] = rbt.RawTurtle(self.canvas)
+        if not rob_name in self.robots:
+            self.robots[rob_name] = rbt.RawTurtle(self.canvas)
         else:
             # Remove "old" robot from World
-            self.world[self.maptoX(self.robots[robname].xcor())][self.maptoY(self.robots[robname].ycor())] = None
+            self.world[self.maptoX(self.robots[rob_name].xcor())][self.maptoY(self.robots[rob_name].ycor())] = None
 
         # Robot shape/colour
         if rshape == "None":  # Can provide own shape def
@@ -359,48 +359,48 @@ class GridWorldSim(tk.Tk):
             poly2 = ((0, 0), (10, -5), (-10, -5))
             self.shp[len(self.shp)-1].addcomponent(poly2, "black", colour)
             self.screen.register_shape(
-                robname+"shape", self.shp[len(self.shp)-1])
+                rob_name+"shape", self.shp[len(self.shp)-1])
         else:
             # Can use standard shape  “arrow”, “turtle”, “circle”,
             # “square”, “triangle”, “classic”
-            self.robots[robname].shape(rshape)
+            self.robots[rob_name].shape(rshape)
 
         # Initalise robot
-        self.robotStates[robname] = 0
-        self.robots[robname].hideturtle()
-        self.robots[robname].pencolor(colour)
-        self.robots[robname].clear()
-        self.robots[robname].penup()
-        self.robots[robname].shape(robname+"shape")
-        self.robots[robname].speed(0)
-        self.robots[robname].goto(self.xtoWorld(posx)-2, self.ytoWorld(self.world_size-posy-1)+1)
-        self.robots[robname].setheading(90)
-        self.robots[robname].showturtle()
+        self.robotStates[rob_name] = 0
+        self.robots[rob_name].hideturtle()
+        self.robots[rob_name].pencolor(colour)
+        self.robots[rob_name].clear()
+        self.robots[rob_name].penup()
+        self.robots[rob_name].shape(rob_name+"shape")
+        self.robots[rob_name].speed(0)
+        self.robots[rob_name].goto(self.xtoWorld(posx)-2, self.ytoWorld(self.world_size-posy-1)+1)
+        self.robots[rob_name].setheading(90)
+        self.robots[rob_name].showturtle()
 
         if self.trails == True:
-            self.robots[robname].clear()
-            self.robots[robname].pendown()
+            self.robots[rob_name].clear()
+            self.robots[rob_name].pendown()
         else:
-            self.robots[robname].penup()
-            self.robots[robname].clear()
+            self.robots[rob_name].penup()
+            self.robots[rob_name].clear()
 
-        self.robots[robname].speed(2)
-        self.world[posx][posy] = robname
+        self.robots[rob_name].speed(2)
+        self.world[posx][posy] = rob_name
 
         return "OK"
 
-    def getXYpos(self, robname):
-        posx = self.maptoX(self.robots[robname].xcor())
-        posy = self.maptoY(self.robots[robname].ycor())
+    def getXYpos(self, rob_name):
+        posx = self.maptoX(self.robots[rob_name].xcor())
+        posy = self.maptoY(self.robots[rob_name].ycor())
         return (posx, posy)
 
-    def moveForward(self, rname):
+    def moveForward(self, rob_name):
         #  check to see if forward is clear
-        if self.look(rname)[2][0] != "Wall":  # Clear to move
+        if self.look(rob_name)[2][0] != "Wall":  # Clear to move
             # move to next grid square
-            self.robots[rname].forward(20)
-            posx = self.maptoX(self.robots[rname].xcor())
-            posy = self.maptoY(self.robots[rname].ycor())
+            self.robots[rob_name].forward(20)
+            posx = self.maptoX(self.robots[rob_name].xcor())
+            posy = self.maptoY(self.robots[rob_name].ycor())
             print((posx, posy))
 
             return "OK"
@@ -409,28 +409,27 @@ class GridWorldSim(tk.Tk):
             print("Cannot move forward")
             return "OK"
 
-    def turnLeft(self, rname):
-        if rname in self.robots:
-            self.robots[rname].left(90)
-            self.look(rname)
+    def turnLeft(self, rob_name):
+        if rob_name in self.robots:
+            self.robots[rob_name].left(90)
+            self.look(rob_name)
             return "OK"
 
         return "Robot name not found"
 
-    def turnRight(self, rname):
-        if rname in self.robots:
-            self.robots[rname].right(90)
-            self.look(rname)
+    def turnRight(self, rob_name):
+        if rob_name in self.robots:
+            self.robots[rob_name].right(90)
+            self.look(rob_name)
             return "OK"
 
         return "Robot name not found"
 
-    def look(self, rname):
-        if rname in self.robots:
-            val=[]
-            posx = self.maptoX(self.robots[rname].xcor())
-            posy = self.maptoY(self.robots[rname].ycor())
-            heading = int(self.robots[rname].heading())
+    def look(self, rob_name):
+        if rob_name in self.robots:
+            posx = self.maptoX(self.robots[rob_name].xcor())
+            posy = self.maptoY(self.robots[rob_name].ycor())
+            heading = int(self.robots[rob_name].heading())
 
             if heading == 0 and posx < self.world_size:  # East
                 val = [self.getValue(posx, posy+1), self.getValue(posx+1, posy+1),
@@ -572,8 +571,10 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "A":
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "E":
-                    rmsg = self.removeEdge(key_a=int(msg[2]), key_b=int(msg[3]))
-                    self.removed_edges[msg[2]] = msg[3]
+                    key_a = msg[2]
+                    key_b = msg[3]
+                    rmsg = self.removeEdge(key_a, key_b)
+                    self.removed_edges[key_a] = key_b
                 else:
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:
