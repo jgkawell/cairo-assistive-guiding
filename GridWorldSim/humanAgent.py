@@ -79,13 +79,15 @@ class HumanAgent():
         start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
         goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
 
-        start_key = self.real_graph.get_key(start_x, start_y)
+        xy = (goal_x, goal_y)
+        start_key = self.real_graph.get_key(xy)
         start = self.real_graph.get_vertex(start_key)
-        print("Start: " + str((start_x, start_y)))
+        print("Start: " + str(xy))
 
-        goal_key = self.real_graph.get_key(goal_x, goal_y)
+        xy = (goal_x, goal_y)
+        goal_key = self.real_graph.get_key(xy)
         goal = self.real_graph.get_vertex(goal_key)
-        print("Goal: " + str((goal_x, goal_y)))
+        print("Goal: " + str(xy))
 
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
@@ -123,7 +125,7 @@ class HumanAgent():
                 for idx in range(6, len(val)):
                     (key_a, key_b) = val[idx]
                     self.removeEdge()
-                t = a_star(self.real_graph, start, goal)
+                self.path = a_star(self.real_graph, start, goal)
 
 
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
@@ -132,10 +134,10 @@ class HumanAgent():
                 self.move_helper(coord)
 
                 i = 0
-                start = self.real_graph.get_vertex(self.real_graph.get_key(self.robot.posx, self.robot.posy))
+                xy = (self.robot.posx, self.robot.posy)
+                start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
                 start.parent = -1
-                t = a_star(self.real_graph, start, goal)
-                self.path = list(reversed(t))
+                self.path = a_star(self.real_graph, start, goal)
 
             else:
                 coord = self.path[i]
@@ -146,7 +148,8 @@ class HumanAgent():
     def move_helper(self, coord):
         (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        node = self.real_graph.get_vertex(self.real_graph.get_key(x, y))
+        xy = (x, y)
+        node = self.real_graph.get_vertex(self.real_graph.get_key(xy))
         print("Current position:", (self.robot.posx, self.robot.posy))
         print("Intended position:", (x,y))
 

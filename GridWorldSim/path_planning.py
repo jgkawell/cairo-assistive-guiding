@@ -93,7 +93,9 @@ class Graph():
     def get_vertices(self):
         return self.vertices.keys()
 
-    def get_key(self, x, y):
+    def get_key(self, xy):
+        x = xy[0]
+        y = xy[1]
         return x + self.world_size * y
 
     def __iter__(self):
@@ -169,7 +171,12 @@ def a_star(graph, start, goal):
 
     # reverse and convert to list
     path = list(reversed(trace(goal, graph)))
-    return path 
+
+    new_path = []
+    for xy in path:
+        new_path.append(graph.get_key(xy))
+
+    return path
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects

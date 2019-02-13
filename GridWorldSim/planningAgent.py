@@ -113,31 +113,69 @@ class PlanningAgent():
         for path in best_paths:
             print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
 
-        # find the locations for obstacles
+        # find the locations for obstacles for each path
+        obstacles_for_paths = {}
         for path in best_paths:
-            key, direction = self.findDivergence(path.vertex_keys, human_path.vertex_keys)
-            print("(Key, Direction): ", (self.abstract_graph.get_vertex(key).get_xy(self.world_size), direction))
+            # copy graph for recursion
+            copy_graph = copy.deepcopy(self.abstract_graph)
+            obstacles_for_paths[path] = []
+            self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
 
         # print human path info
         print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
-        return False
+        for obstacle in obstacles_for_paths[best_paths[0]]:
+            self.removeEdge(obstacle[0], obstacle[1])
 
-    def findDivergence(self, robot_path, human_path):
-        key = 0
-        direction = 0
+        return True
 
+    def findObstaclePlacements(self, copy_graph, obstacles_for_paths, path, human_path):
+        # find obstacle location
+        key_from, key_to = self.findDivergence(path.vertex_keys, human_path.vertex_keys)
+        
+        # check for bad key
+        if key_from != -1:
+            x = self.abstract_graph.get_vertex(key_from).get_xy(self.world_size)
+            y = self.abstract_graph.get_vertex(key_to).get_xy(self.world_size)
+
+            print("Obstacle: ", (x, y))
+            # save the obstacle location
+            obstacles_for_paths[path].append((key_from, key_to))
+            # apply obstacle (remove edge)
+            start_key = key_from
+            end_key = key_to
+            self.removeEdgeFromCopy(copy_graph, start_key, end_key)
+
+            # find all solution paths and rank them by total value
+            # -sys.maxsize is to make sure that it's not removing paths based on total value (human doesn't know about hazards)
+            best_paths = path_planning.find_paths(copy_graph, start_key, self.reward_keys, value_limit=-sys.maxsize)
+            # pull out the human path (the one with the shortest distance)
+            new_human_path = copy.deepcopy(sorted(best_paths, key=lambda x: x.distance, reverse=False)[0])
+
+            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, new_human_path)
+        else:
+            return obstacles_for_paths
+
+
+    def findDivergence(self, robot_path, human_path, cur_pos=0):
+        key_from = -1
+        key_to = -1
+
+        # iterate through robot path and check for divergence
         for i in range(len(robot_path)):
             key_r = robot_path[i]
             key_h = human_path[i]
 
+            # if the robot key doesn't match the human key then return
+            # the human key and the previous human key
             if key_r != key_h:
                 prev_h = self.abstract_graph.get_vertex(human_path[i-1])
-                key = prev_h.key
-                direction = prev_h.get_neighbors()[key_h][0]
+                key_from = prev_h.key
+                key_to = key_h
+                del(robot_path[0:i-1])
                 break
 
-        return key, direction
+        return key_from, key_to
 
 
 
@@ -162,6 +200,20 @@ class PlanningAgent():
                 real_neighbor_key = key
 
         self.robot.removeEdge(key_a, real_neighbor_key)
+
+    def removeEdgeFromCopy(self, graph, key_a, key_b):
+        self.removeSingleEdgeFromCopy(graph, key_a, key_b)
+        self.removeSingleEdgeFromCopy(graph, key_b, key_a)
+
+    def removeSingleEdgeFromCopy(self, graph, from_key, to_key):
+        # pull out neighbors of from vertex
+        neighbors_from = graph.get_vertex(from_key).get_neighbors()
+
+        # remove neighbor with matching key
+        for key in neighbors_from.keys():
+            if key == to_key:
+                del neighbors_from[key]
+                break
 
     def simplifyWorld(self, world_size, level):
         # first level that just pulls out intersections
