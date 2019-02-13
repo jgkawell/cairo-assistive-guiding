@@ -72,6 +72,7 @@ class GRobot():
                 if len(packet) < buffer_size and len(data) > 0:
                     break
 
+            # NOTE: this only works in python3, python2 requires you to remove the decode statement
             if rec_type == "string":        
                 rmsg = data.decode("utf-8")
             else:

@@ -158,70 +158,89 @@ class HumanAgent():
     def move_helper(self, coord):
         (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        xy = (x, y)
-        node = self.real_graph.get_vertex(self.real_graph.get_key(xy))
         print("Current position:", (self.robot.posx, self.robot.posy))
-        print("Intended position:", (x,y))
+        print("Intended position:", (x, y))
 
-        if direction == (1, 0): #right
-            if self.heading == 0:
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-            else:
-                for i in range(int(self.heading / 90)): self.robot.right()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 0
+        # check for success
+        msg = ""
 
-            if node.cell_type != "Wall": self.robot.posx += 1
+        # heading: 0=E, 90=N, 180=W, 270=S
 
-        elif direction == (0, 1): #up
-            if self.heading == 90:
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-            elif self.heading > 90:
-                for i in range(int((self.heading - 90)/90)): self.robot.right()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 90
-            else: #facing right
-                self.robot.left()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 90
-
-            if node.cell_type != "Wall": self.robot.posy += 1
-
-        elif direction == (-1, 0): #left
-            if self.heading == 180:
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-            elif self.heading < 180:
-                for i in range(int((180-self.heading)/90)): self.robot.left()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 180
-            else: # facing down = 270
+        # east
+        if direction == (1, 0):
+            if self.heading == 0: # E
+                msg = self.robot.forward()
+            elif self.heading == 90: # N
                 self.robot.right()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 180
+                msg = self.robot.forward()
+            elif self.heading == 180: # W
+                self.robot.right()
+                self.robot.right()
+                msg = self.robot.forward()
+            elif self.heading == 270: # S
+                self.robot.left()
+                msg = self.robot.forward()
 
-            if node.cell_type != "Wall": self.robot.posx -= 1
+            self.heading = 0
 
-        elif direction == (0, -1): #down
-            if self.heading == 270:
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-            else:
-                for i in range(int((270-self.heading)/90)): self.robot.left()
-                if node.cell_type != "Wall":
-                    self.robot.forward()
-                self.heading = 270
+            if msg == "OK": self.robot.posx += 1
 
-            if node.cell_type != "Wall":
-                self.robot.posy -= 1
+        # north
+        elif direction == (0, 1):
+            if self.heading == 0: # E
+                self.robot.left()
+                msg = self.robot.forward()
+            elif self.heading == 90: # N
+                msg = self.robot.forward()
+            elif self.heading == 180: # W
+                self.robot.right()
+                msg = self.robot.forward()
+            elif self.heading == 270: # S
+                self.robot.left()
+                self.robot.left()
+                msg = self.robot.forward()
 
+            self.heading = 90            
+
+            if msg == "OK": self.robot.posy += 1
+
+        # west
+        elif direction == (-1, 0):
+            if self.heading == 0: # E
+                self.robot.left()
+                self.robot.left()
+                msg = self.robot.forward()
+            elif self.heading == 90: # N
+                self.robot.left()
+                msg = self.robot.forward()
+            elif self.heading == 180: # W
+                msg = self.robot.forward()
+            elif self.heading == 270: # S
+                self.robot.right()
+                msg = self.robot.forward()
+
+            self.heading = 180            
+
+            if msg == "OK": self.robot.posx -= 1
+
+        # south
+        elif direction == (0, -1):
+            if self.heading == 0: # E
+                self.robot.right()
+                msg = self.robot.forward()
+            elif self.heading == 90: # N
+                self.robot.left()
+                self.robot.left()
+                msg = self.robot.forward()
+            elif self.heading == 180: # W
+                self.robot.left()
+                msg = self.robot.forward()
+            elif self.heading == 270: # S
+                msg = self.robot.forward()
+
+            self.heading = 270            
+
+            if msg == "OK": self.robot.posy -= 1
 
 
 if __name__ == "__main__":
