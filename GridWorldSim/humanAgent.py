@@ -76,10 +76,10 @@ class HumanAgent():
         self.sendGraph()
 
         # generate start and goal states
-        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
+        start_x, start_y = 1, 1#self.empty_states[randint(0, len(self.empty_states)-1)]
+        goal_x, goal_y = 0, 30#self.reward_states[randint(0, len(self.reward_states)-1)]
 
-        xy = (goal_x, goal_y)
+        xy = (start_x, start_y)
         start_key = self.real_graph.get_key(xy)
         start = self.real_graph.get_vertex(start_key)
         print("Start: " + str(xy))
@@ -116,15 +116,20 @@ class HumanAgent():
 
 
     def move(self, goal):
-        i = 1
+        i = 0
         t = []
         goal_pose = goal.get_xy(self.world_size)
         while (self.robot.posx, self.robot.posy) != goal_pose:
             val = self.robot.look()
             if len(val) > 5:#1st 5 elems are adjacent cell info, everything after is deleted key info
                 for idx in range(6, len(val)):
-                    (key_a, key_b) = val[idx]
-                    self.removeEdge()
+                    key_a, key_b = val[idx]
+                    self.removeEdge(key_a, key_b)
+
+                i = 0
+                xy = (self.robot.posx, self.robot.posy)
+                start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
+                start.parent = -1
                 self.path = a_star(self.real_graph, start, goal)
 
 

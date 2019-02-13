@@ -176,7 +176,7 @@ def a_star(graph, start, goal):
     for xy in path:
         new_path.append(graph.get_key(xy))
 
-    return path
+    return path 
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects

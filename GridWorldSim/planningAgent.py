@@ -112,6 +112,9 @@ class PlanningAgent():
         print("Found paths: ", len(best_paths))
         for path in best_paths:
             print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
+            
+        # print human path info
+        print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
         # find the locations for obstacles for each path
         obstacles_for_paths = {}
@@ -121,8 +124,6 @@ class PlanningAgent():
             obstacles_for_paths[path] = []
             self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
 
-        # print human path info
-        print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
         for obstacle in obstacles_for_paths[best_paths[0]]:
             self.removeEdge(obstacle[0], obstacle[1])

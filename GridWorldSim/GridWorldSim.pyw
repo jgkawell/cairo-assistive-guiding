@@ -248,7 +248,7 @@ class GridWorldSim(tk.Tk):
         # remove neighbor with matching key
         for key in neighbors_from.keys():
             if key == to_key:
-                del neighbors_from[key]
+                del(neighbors_from[key])
                 break
 
         print("Removed edges between keys: ", (from_key, to_key))
@@ -456,8 +456,8 @@ class GridWorldSim(tk.Tk):
 
             if(len(self.removed_edges) > 0):
                 for key_a, key_b in self.removed_edges:
-                        del self.removed_edges[key_a]
-                        val.append((key_a, key_b))
+                    del(self.removed_edges[key_a])
+                    val.append((key_a, key_b))
 
 
             return val
@@ -570,13 +570,15 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "M":
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 elif msg[0] == "A":
+                    # acquire new version of human_graph (robot)
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "E":
                     key_a = msg[2]
                     key_b = msg[3]
-                    rmsg = self.removeEdge(key_a, key_b)
+                    rmsg = self.removeEdge(int(key_a), int(key_b))
                     self.removed_edges[key_a] = key_b
                 else:
+                    # send a new version of human_graph (human)
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:
                 # raise #debug. If error just carry on
