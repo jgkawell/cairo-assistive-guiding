@@ -118,6 +118,10 @@ class GridWorldSim(tk.Tk):
         self.real_graph = path_planning.Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
         self.removed_edges = {}
+        
+        # this keeps track of whose turn it is to make an action
+        # each agent checks this variable to see if it matches it's number
+        self.turn = 0
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -398,9 +402,6 @@ class GridWorldSim(tk.Tk):
         if self.look(rob_name)[0]:  # Clear to move
             # move to next grid square
             self.robots[rob_name].forward(20)
-            posx = self.maptoX(self.robots[rob_name].xcor())
-            posy = self.maptoY(self.robots[rob_name].ycor())
-
             return "OK"
         else:
             # If not clear (None), then don't move
@@ -423,33 +424,37 @@ class GridWorldSim(tk.Tk):
 
     def look(self, rob_name):
         if rob_name in self.robots:
+            # pull out x, y and heading of robot
             posx = self.maptoX(self.robots[rob_name].xcor())
             posy = self.maptoY(self.robots[rob_name].ycor())
             heading = int(self.robots[rob_name].heading())
 
-            if heading == 0 and posx < self.world_size:  # East
-                val = [self.getValue(posx, posy+1), self.getValue(posx+1, posy+1),
-                        self.getValue(posx+1, posy), self.getValue(posx+1, posy-1), self.getValue(posx, posy-1)]
-            elif heading == 90 and posy < self.world_size:  # North
-                val = [self.getValue(posx-1, posy), self.getValue(posx-1, posy+1),
-                        self.getValue(posx, posy+1), self.getValue(posx+1, posy+1), self.getValue(posx+1, posy)]
-            elif heading == 180 and posx >= 0:  # West
-                val = [self.getValue(posx, posy-1), self.getValue(posx-1, posy-1),
-                        self.getValue(posx-1, posy), self.getValue(posx-1, posy+1), self.getValue(posx, posy+1)]
-            elif heading == 270 and posy >= 0:  # South
-                val = [self.getValue(posx+1, posy), self.getValue(posx+1, posy-1),
-                        self.getValue(posx, posy-1), self.getValue(posx-1, posy-1), self.getValue(posx-1, posy)]
-            else:
-                # Facing edge of world
-                val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
+            # if fog_world, gradually clear fog as world is explored
+            if self.fogWorld:
+                if heading == 0 and posx < self.world_size:  # East
+                    val = [self.getValue(posx, posy+1), self.getValue(posx+1, posy+1),
+                            self.getValue(posx+1, posy), self.getValue(posx+1, posy-1), self.getValue(posx, posy-1)]
+                elif heading == 90 and posy < self.world_size:  # North
+                    val = [self.getValue(posx-1, posy), self.getValue(posx-1, posy+1),
+                            self.getValue(posx, posy+1), self.getValue(posx+1, posy+1), self.getValue(posx+1, posy)]
+                elif heading == 180 and posx >= 0:  # West
+                    val = [self.getValue(posx, posy-1), self.getValue(posx-1, posy-1),
+                            self.getValue(posx-1, posy), self.getValue(posx-1, posy+1), self.getValue(posx, posy+1)]
+                elif heading == 270 and posy >= 0:  # South
+                    val = [self.getValue(posx+1, posy), self.getValue(posx+1, posy-1),
+                            self.getValue(posx, posy-1), self.getValue(posx-1, posy-1), self.getValue(posx-1, posy)]
+                else:
+                    # Facing edge of world
+                    val == [("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0), ("Wall", 0, 0)]
 
+                # clear cells that are seen
+                for block in val:
+                    px, py = block[1], block[2]
+                    if self.explored[px][py] == False:
+                        self.explored[px][py] = True
+                        self.fillGrid(px, py, self.world[px][py])
 
-            for block in val:
-                px, py = block[1], block[2]
-                if self.explored[px][py] == False:
-                    self.explored[px][py] = True
-                    self.fillGrid(px, py, self.world[px][py])
-
+            # convert heading to direction
             direction = -1
             if heading == 90:
                 direction == 1
@@ -572,41 +577,49 @@ class GridWorldSim(tk.Tk):
             # split string msg into parts
             msg = msg.split()
 
-            # Do robot commands
+            # Do robot commands (msg[1] is robot name)
             try:
                 if msg[0] == "N":
                     # New or init robot
                     rmsg = self.newRobot(msg[1], int(msg[2]), int(msg[3]), msg[4], msg[5])
                 elif msg[0] == "F":
-                    # msg[1] is robot name
+                    # moves the robot forward
                     rmsg = self.moveForward(msg[1])
                 elif msg[0] == "R":
+                    # turns the robot to the right
                     rmsg = self.turnRight(msg[1])
                 elif msg[0] == "L":
+                    # turns the robot to the left
                     rmsg = self.turnLeft(msg[1])
                 elif msg[0] == "S":
+                    # performs the look function and returns the result
                     rmsg = str(self.look(msg[1]))
                 elif msg[0] == "P":
+                    # returns the x,y position of the robot
                     rmsg = self.getXYpos(msg[1])
                 elif msg[0] == "G":
+                    # returns the path to the current map in use by the sim
                     rmsg = self.cur_file
                 elif msg[0] == "M":
+                    # modifies the look of a cell without changing its actual value
                     rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
                 elif msg[0] == "A":
-                    # acquire new version of human_graph (robot)
+                    # returns the current version of human_graph
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "E":
+                    # removes an edge from real_graph
                     key_a = msg[2]
                     key_b = msg[3]
                     rmsg = self.removeEdge(self.real_graph, int(key_a), int(key_b))
                 else:
-                    # send a new version of human_graph (human)
+                    # updates the current version of human_graph
                     rmsg = self.updateHumanGraph(message)
             except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"
                 print("EXCEPTION: " + str(e))
 
+            # make sure to not return None object
             if rmsg == None:
                 rmsg == "None"
 
@@ -614,6 +627,7 @@ class GridWorldSim(tk.Tk):
             while self.wait == True:
                 sleep(0.01)
 
+            # check for string or object (bytes)
             if type(rmsg)==str:
                 cli_sock.send(str(rmsg).encode('utf-8'))
             else:

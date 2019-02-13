@@ -55,6 +55,7 @@ class PlanningAgent():
         # execute action
         self.move()
 
+    # gets the human_graph from the sim
     def getHumanGraph(self):
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.getGraph())
@@ -124,12 +125,13 @@ class PlanningAgent():
             obstacles_for_paths[path] = []
             self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
 
-
         for obstacle in obstacles_for_paths[best_paths[0]]:
-            self.removeEdge(obstacle[0], obstacle[1])
+            self.removeEdgeFromRealGraph(obstacle[0], obstacle[1])
 
         return True
 
+    # finds the obstacles to place that forces the human on the desired path
+    # recursively checks the human's predicted route after each obstacle to generate list
     def findObstaclePlacements(self, copy_graph, obstacles_for_paths, path, human_path):
         # find obstacle location
         key_from, key_to = self.findDivergence(path.vertex_keys, human_path.vertex_keys)
@@ -145,7 +147,7 @@ class PlanningAgent():
             # apply obstacle (remove edge)
             start_key = key_from
             end_key = key_to
-            self.removeEdgeFromCopy(copy_graph, start_key, end_key)
+            self.removeEdgeFromGivenGraph(copy_graph, start_key, end_key)
 
             # find all solution paths and rank them by total value
             # -sys.maxsize is to make sure that it's not removing paths based on total value (human doesn't know about hazards)
@@ -157,56 +159,68 @@ class PlanningAgent():
         else:
             return obstacles_for_paths
 
-
-    def findDivergence(self, robot_path, human_path, cur_pos=0):
+    # finds the point at which the human will diverge from the desired path
+    # this is done by looking the the predicted human path and comparing
+    # it with the desired path
+    def findDivergence(self, desired_path, human_path, cur_pos=0):
         key_from = -1
         key_to = -1
 
         # iterate through robot path and check for divergence
-        for i in range(len(robot_path)):
-            key_r = robot_path[i]
-            key_h = human_path[i]
+        for i in range(len(desired_path)):
+            key_desired = desired_path[i]
+            key_human = human_path[i]
 
             # if the robot key doesn't match the human key then return
             # the human key and the previous human key
-            if key_r != key_h:
-                prev_h = self.abstract_graph.get_vertex(human_path[i-1])
-                key_from = prev_h.key
-                key_to = key_h
-                del(robot_path[0:i-1])
+            if key_desired != key_human:
+                prev_human = self.abstract_graph.get_vertex(human_path[i-1])
+                key_from = prev_human.key
+                key_to = key_human
+                del(desired_path[0:i-1])
                 break
 
         return key_from, key_to
 
-
-
     def move(self):
         return
 
-    def removeEdge(self, key_a, key_b):
+    # given two keys in the abstract graph, this removes the keys from
+    # real_graph and propagates the change to the sim
+    def removeEdgeFromRealGraph(self, key_a, key_b):
+        # pull out vertices
         vertex_a_abstract = self.abstract_graph.get_vertex(key_a)
         vertex_a_real = self.real_graph.get_vertex(key_a)
 
+        # find neighbors
         real_neighbors = vertex_a_real.get_neighbors()
         abstract_neighbors = vertex_a_abstract.get_neighbors()
 
+        # find the direction in the abstract graph
         abstract_direction = 0
         for key, info in abstract_neighbors.items():
             if key == key_b:
                 abstract_direction = info[0]
 
+        # find the real neighbor's key
         real_neighbor_key = -1
         for key, info in real_neighbors.items():
             if info[0] == abstract_direction:
                 real_neighbor_key = key
 
+        # remove from local real world
+        self.removeEdgeFromGivenGraph(self.real_graph, key_a, real_neighbor_key)
+
+        # remove from real world in sim
         self.robot.removeEdge(key_a, real_neighbor_key)
 
-    def removeEdgeFromCopy(self, graph, key_a, key_b):
-        self.removeSingleEdgeFromCopy(graph, key_a, key_b)
-        self.removeSingleEdgeFromCopy(graph, key_b, key_a)
+    # bidirectional removal of and edge given the graph and keys
+    def removeEdgeFromGivenGraph(self, graph, key_a, key_b):
+        self.removeSingleEdgeFromGivenGraph(graph, key_a, key_b)
+        self.removeSingleEdgeFromGivenGraph(graph, key_b, key_a)
 
-    def removeSingleEdgeFromCopy(self, graph, from_key, to_key):
+    # removes the edge in a single direction
+    def removeSingleEdgeFromGivenGraph(self, graph, from_key, to_key):
         # pull out neighbors of from vertex
         neighbors_from = graph.get_vertex(from_key).get_neighbors()
 
@@ -216,6 +230,8 @@ class PlanningAgent():
                 del neighbors_from[key]
                 break
 
+    # creates the abstract representaion of the world
+    # self.real_graph -> self.abstract_graph
     def simplifyWorld(self, world_size, level):
         # first level that just pulls out intersections
         if level == 0:
@@ -263,6 +279,7 @@ class PlanningAgent():
 
         return key_list
 
+    # creates new vertices between previous vertices given a distance limit
     def generateIntermediateVertices(self, distance_limit):
         # pull out the current vertex keys to find new neighbors for
         start_vertices = []
@@ -324,6 +341,7 @@ class PlanningAgent():
 
         return key_list
 
+    # generates the edges between vertices given a list of vertex keys
     def generateEdges(self, key_list):
         # iterate through list of keys creating edges for each one
         for cur_key in key_list:
@@ -369,6 +387,8 @@ class PlanningAgent():
                 # return a bad key to signal deadend
                 return (-1, 0, 0)
 
+    # recurses to create a new neighbor at the max depth
+    # given the keys to move between
     def findAbstractNeighbor(self, key_a, key_b, cur_depth, max_depth):
         if cur_depth == max_depth:
             return key_b
