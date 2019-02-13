@@ -236,14 +236,14 @@ class GridWorldSim(tk.Tk):
         print("Updated human graph")
         return "OK"
 
-    def removeEdge(self, key_a, key_b):
-        self.removeSingleEdge(key_a, key_b)
-        self.removeSingleEdge(key_b, key_a)
+    def removeEdge(self, graph, key_a, key_b):
+        self.removeSingleEdge(graph, key_a, key_b)
+        self.removeSingleEdge(graph, key_b, key_a)
         return "OK"
 
-    def removeSingleEdge(self, from_key, to_key):
+    def removeSingleEdge(self, graph, from_key, to_key):
         # pull out neighbors of from vertex
-        neighbors_from = self.real_graph.get_vertex(from_key).get_neighbors()
+        neighbors_from = graph.get_vertex(from_key).get_neighbors()
 
         # remove neighbor with matching key
         for key in neighbors_from.keys():
@@ -396,7 +396,7 @@ class GridWorldSim(tk.Tk):
 
     def moveForward(self, rob_name):
         #  check to see if forward is clear
-        if self.look(rob_name)[2][0] != "Wall":  # Clear to move
+        if self.look(rob_name)[0]:  # Clear to move
             # move to next grid square
             self.robots[rob_name].forward(20)
             posx = self.maptoX(self.robots[rob_name].xcor())
@@ -412,7 +412,6 @@ class GridWorldSim(tk.Tk):
     def turnLeft(self, rob_name):
         if rob_name in self.robots:
             self.robots[rob_name].left(90)
-            self.look(rob_name)
             return "OK"
 
         return "Robot name not found"
@@ -420,7 +419,6 @@ class GridWorldSim(tk.Tk):
     def turnRight(self, rob_name):
         if rob_name in self.robots:
             self.robots[rob_name].right(90)
-            self.look(rob_name)
             return "OK"
 
         return "Robot name not found"
@@ -454,13 +452,40 @@ class GridWorldSim(tk.Tk):
                     self.explored[px][py] = True
                     self.fillGrid(px, py, self.world[px][py])
 
-            if(len(self.removed_edges) > 0):
-                for key_a, key_b in self.removed_edges:
-                    del(self.removed_edges[key_a])
-                    val.append((key_a, key_b))
+            direction = -1
+            if heading == 90:
+                direction == 1
+            elif heading == 0:
+                direction == 2
+            elif heading == 270:
+                direction == 3
+            elif heading == 180:
+                direction = 4
 
+            # pull out values for edge check
+            from_key = self.real_graph.get_key((posx, posy))
+            vertex_real = self.real_graph.get_vertex(from_key)
+            vertex_human = self.human_graph.get_vertex(from_key)
 
-            return val
+            # find edges to remove from human_graph
+            valid = True
+            changed = False
+            edge_to_remove = []
+            for to_key, info in vertex_human.get_neighbors().items():
+                try:
+                    temp = vertex_real.get_neighbors()[to_key]
+                except:
+                    print("Removed edge!")
+                    edge_to_remove.append((from_key, to_key))
+                    changed = True
+                    if info[0] == direction:
+                        valid = False
+
+            # remove edges from human_graph
+            for edge in edge_to_remove:
+                self.removeEdge(self.human_graph, edge[0], edge[1])
+
+            return valid, changed
 
         return "Robot name not found"
 
@@ -575,8 +600,7 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "E":
                     key_a = msg[2]
                     key_b = msg[3]
-                    rmsg = self.removeEdge(int(key_a), int(key_b))
-                    self.removed_edges[key_a] = key_b
+                    rmsg = self.removeEdge(self.real_graph, int(key_a), int(key_b))
                 else:
                     # send a new version of human_graph (human)
                     rmsg = self.updateHumanGraph(message)

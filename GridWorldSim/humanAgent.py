@@ -16,6 +16,7 @@ except:
 from grobot import GRobot
 from random import randint
 from path_planning import *
+import path_planning
 import pickle
 import numpy as np
 import copy
@@ -116,28 +117,29 @@ class HumanAgent():
 
 
     def move(self, goal):
-        i = 0
-        t = []
+        i = 1
         goal_pose = goal.get_xy(self.world_size)
         while (self.robot.posx, self.robot.posy) != goal_pose:
-            val = self.robot.look()
-            if len(val) > 5:#1st 5 elems are adjacent cell info, everything after is deleted key info
-                for idx in range(6, len(val)):
-                    key_a, key_b = val[idx]
-                    self.removeEdge(key_a, key_b)
+            valid, changed = self.robot.look()
+            
+            if changed:
+                # update world knowledge
+                self.real_graph = self.getHumanGraph()
 
+                # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
                 start.parent = -1
                 self.path = a_star(self.real_graph, start, goal)
 
-
+            # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
                 self.move_helper(coord)
 
+                # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
@@ -149,6 +151,9 @@ class HumanAgent():
                 self.move_helper(coord)
                 i += 1
 
+    def getHumanGraph(self):
+        sys.modules['path_planning'] = path_planning
+        return pickle.loads(self.robot.getGraph())
 
     def move_helper(self, coord):
         (x, y) = coord
