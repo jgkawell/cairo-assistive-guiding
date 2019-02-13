@@ -96,8 +96,8 @@ class PlanningAgent():
         best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.reward_keys, self.value_limit)
         best_paths.sort(key=lambda x: x.total, reverse=True)
 
-        # pull out the human path (the one with the shortest distance)
-        human_path = copy.deepcopy(sorted(best_paths, key=lambda x: x.distance, reverse=False)[0])
+        # generate the expected human path
+        human_path = path_planning.a_star(self.human_graph, start_key, self.reward_keys)
 
         # find paths with too low of a total value
         remove_list = []
@@ -149,12 +149,10 @@ class PlanningAgent():
             end_key = key_to
             self.removeEdgeFromGivenGraph(copy_graph, start_key, end_key)
 
-            # find all solution paths and rank them by total value
-            # -sys.maxsize is to make sure that it's not removing paths based on total value (human doesn't know about hazards)
-            best_paths = path_planning.find_paths(copy_graph, start_key, self.reward_keys, value_limit=-sys.maxsize)
-            # pull out the human path (the one with the shortest distance)
-            new_human_path = copy.deepcopy(sorted(best_paths, key=lambda x: x.distance, reverse=False)[0])
+            # generate the expected human path
+            human_path = path_planning.a_star(self.human_graph, start_key, self.reward_keys)
 
+            # recurse to find obtacles with this new human path
             obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, new_human_path)
         else:
             return obstacles_for_paths

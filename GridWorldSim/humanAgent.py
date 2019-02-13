@@ -34,7 +34,6 @@ class HumanAgent():
         self.reward_removal_constant = 0.5
         self.real_graph = None
 
-
         # get file name from simulator
         file_name = self.robot.getFile()
 
@@ -77,19 +76,22 @@ class HumanAgent():
         self.sendGraph()
 
         # generate start and goal states
-        start_x, start_y = 1, 1#self.empty_states[randint(0, len(self.empty_states)-1)]
-        goal_x, goal_y = 0, 30#self.reward_states[randint(0, len(self.reward_states)-1)]
+        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
 
+        # build start info
         xy = (start_x, start_y)
         start_key = self.real_graph.get_key(xy)
         start = self.real_graph.get_vertex(start_key)
         print("Start: " + str(xy))
 
+        # build goal info
         xy = (goal_x, goal_y)
         goal_key = self.real_graph.get_key(xy)
         goal = self.real_graph.get_vertex(goal_key)
         print("Goal: " + str(xy))
 
+        # recreate robot with 
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         #path plan with A*

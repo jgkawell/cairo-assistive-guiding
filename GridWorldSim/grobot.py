@@ -34,11 +34,8 @@ import atexit
 import sys
 import struct
 
-hostname="localhost" # Set to Tutors PC IP address to shown on Projector etc?
-port = 9001          # Possibility of various clients running own robots
-                     # in the simulator in future?
-
-
+hostname = "localhost"
+port = 9001
 class GRobot():
 
     def __init__(self, rname="anon", posx=1, posy=1, colour="red", rshape="None"):

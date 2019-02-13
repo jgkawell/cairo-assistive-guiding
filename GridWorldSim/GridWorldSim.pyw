@@ -68,9 +68,8 @@ class GridWorldSim(tk.Tk):
         self.frmht = 622
         self.frmwt = 622
         self.gridspace = 20
-        self.robots = {}  # Mutiple named robots?
+        self.robots = {}  # Mutiple named robots
         self.shp = []  # Robot shapes list
-        self.robotStates = {}  # Internal states of robots
         self.trails = False  # Trails off to start with
         tk.Tk.__init__(self, master)
         tk.Tk.title(self, "Robot Grid World")
@@ -118,10 +117,6 @@ class GridWorldSim(tk.Tk):
         self.real_graph = path_planning.Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
         self.removed_edges = {}
-        
-        # this keeps track of whose turn it is to make an action
-        # each agent checks this variable to see if it matches it's number
-        self.turn = 0
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -369,7 +364,6 @@ class GridWorldSim(tk.Tk):
             self.robots[rob_name].shape(rshape)
 
         # Initalise robot
-        self.robotStates[rob_name] = 0
         self.robots[rob_name].hideturtle()
         self.robots[rob_name].pencolor(colour)
         self.robots[rob_name].clear()
