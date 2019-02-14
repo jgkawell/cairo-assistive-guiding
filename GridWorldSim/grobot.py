@@ -44,7 +44,7 @@ class GRobot():
         self.posy=posy
         self.colour=colour
         self.rshape=rshape
-        msg = "N "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape
+        msg = "new_robot "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape
         self._send(msg)
 
     def _send(self, msg, send_type="string", rec_type="string"):
@@ -86,42 +86,38 @@ class GRobot():
             print("Please make sure Simulator is running")
             exit()
 
-
-
         return rmsg
 
-    def init(self, xpos=1, ypos=1):
-        self.xpos=xpos
-        self.ypos=ypos
-        return self._send("N " + self.rname+" "+str(self.xpos)+" "+str(self.ypos)+" "+self.colour+" "+ self.rshape)
+    def forward(self):
+        return self._send("move_forward " + self.rname)
 
     def right(self):
-        return self._send("R "+ self.rname+" ")
+        return self._send("turn_right "+ self.rname+" ")
 
     def left(self):
-        return self._send("L " + self.rname+" ")
+        return self._send("turn_left " + self.rname+" ")
 
     def look(self):
-        msg = self._send("S " + self.rname)
+        msg = self._send("look " + self.rname)
         return eval(msg)
 
-    def forward(self):
-        return self._send("F " + self.rname)
-
-    def getGraph(self):
-        return self._send("A " + self.rname, rec_type="byte")
+    def getPosition(self, rob_name):
+        return eval(self._send("get_xy_pos " + rob_name))
 
     def getFile(self):
-        return self._send("G " + self.rname)
+        return self._send("get_cur_file " + self.rname)
 
     def modifyCellLook(self, x, y, cell_type):
-        return self._send("M " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)
+        return self._send("modify_cell_look " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)
+
+    def getGraph(self):
+        return self._send("get_cur_human_graph " + self.rname, rec_type="byte")
 
     def removeEdge(self, key_a, key_b):
-        return self._send("E " + self.rname + " " + str(key_a) + " " + str(key_b))
+        return self._send("remove_edge " + self.rname + " " + str(key_a) + " " + str(key_b))
 
     def checkMove(self):
-        return eval(self._send("C " + self.rname))
+        return eval(self._send("can_human_move " + self.rname))
 
 
 

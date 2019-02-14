@@ -21,19 +21,19 @@ class PlanningAgent():
     def __init__(self):
         # Initialise globals
         self.robot = GRobot("PlanningAgent", colour="yellow")
-        self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
-        self.path = []
+
+        # human agent variables
         self.human_graph = None
         self.human_position = 1
+        self.human_name = "HumanAgent"
+
+        # abstraction/optimization variables
         self.value_limit = -sys.maxsize
         self.reward_keys = []
         self.show_abstraction = False
 
-        # get file name from simulator
-        file_name = self.robot.getFile()
-
         # import world
-        self.world = pickle.load(open(file_name, 'rb'))
+        self.world = pickle.load(open(self.robot.getFile(), 'rb'))
         self.world_size = len(self.world)
 
     def run(self):
@@ -82,6 +82,7 @@ class PlanningAgent():
                 old_size = new_size
 
             # find solution path
+            self.human_position = self.real_graph.get_key(self.robot.getPosition(self.human_name))
             found_sol = self.findSolution(self.human_position)
 
             end = timer()

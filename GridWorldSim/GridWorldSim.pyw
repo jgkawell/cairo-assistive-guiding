@@ -224,7 +224,7 @@ class GridWorldSim(tk.Tk):
             self.world[x][y] = None
 
     # change the look of a cell WITHOUT changing its contents
-    def modifyCellLook(self, x, y, cell_type):
+    def modify_cell_look(self, x, y, cell_type):
         self.fillGrid(x, y, cell_type)
         return "OK"
 
@@ -234,13 +234,13 @@ class GridWorldSim(tk.Tk):
         self.world[x][y] = cell_type
 
     # update the copy of the human graph from serialized object
-    def updateHumanGraph(self, serializedGraph):
+    def update_human_graph(self, serializedGraph):
         sys.modules['path_planning'] = path_planning
         self.human_graph = pickle.loads(serializedGraph)
         print("Updated human graph")
         return "OK"
 
-    def removeEdge(self, graph, key_a, key_b):
+    def remove_edge(self, graph, key_a, key_b):
         self.removeSingleEdge(graph, key_a, key_b)
         self.removeSingleEdge(graph, key_b, key_a)
         return "OK"
@@ -310,7 +310,7 @@ class GridWorldSim(tk.Tk):
         if filename != None:
             # remove robots from world!
             for rob_name in list(self.robots.keys()):
-                xpos, ypos = self.getXYpos(rob_name)
+                xpos, ypos = self.get_xy_pos(rob_name)
                 self.world[xpos][ypos] = None
 
             # Then save!
@@ -342,7 +342,7 @@ class GridWorldSim(tk.Tk):
         self.explored = [[exploredValue] * (self.world_size) for i in range(self.world_size)]
         self.drawWorld()
 
-    def newRobot(self, rob_name="None",  posx=1, posy=1, colour="red", rshape="None"):
+    def new_robot(self, rob_name="None",  posx=1, posy=1, colour="red", rshape="None"):
         if rob_name == "None":
             # create/use Anonymous robot. Can only do one!
             rob_name = "anon"
@@ -391,12 +391,12 @@ class GridWorldSim(tk.Tk):
 
         return "OK"
 
-    def getXYpos(self, rob_name):
+    def get_xy_pos(self, rob_name):
         posx = self.maptoX(self.robots[rob_name].xcor())
         posy = self.maptoY(self.robots[rob_name].ycor())
         return (posx, posy)
 
-    def moveForward(self, rob_name):
+    def move_forward(self, rob_name):
         #  check to see if forward is clear
         if self.look(rob_name)[0]:  # Clear to move
             # move to next grid square
@@ -405,21 +405,20 @@ class GridWorldSim(tk.Tk):
             # until the planning agent allows it
             if rob_name == "HumanAgent":
                 self.can_human_move = False
-                
             return "OK"
         else:
             # If not clear (None), then don't move
             print("Cannot move forward")
             return "OK"
 
-    def turnLeft(self, rob_name):
+    def turn_left(self, rob_name):
         if rob_name in self.robots:
             self.robots[rob_name].left(90)
             return "OK"
 
         return "Robot name not found"
 
-    def turnRight(self, rob_name):
+    def turn_right(self, rob_name):
         if rob_name in self.robots:
             self.robots[rob_name].right(90)
             return "OK"
@@ -490,7 +489,7 @@ class GridWorldSim(tk.Tk):
 
             # remove edges from human_graph
             for edge in edge_to_remove:
-                self.removeEdge(self.human_graph, edge[0], edge[1])
+                self.remove_edge(self.human_graph, edge[0], edge[1])
 
             return valid, changed
 
@@ -578,49 +577,49 @@ class GridWorldSim(tk.Tk):
             print("Not string")
 
         if msg != "Q":
-            # split string msg into parts
+            # split string msg into parts (by spaces)
             msg = msg.split()
 
             # Do robot commands (msg[1] is robot name)
             try:
-                if msg[0] == "N":
+                if msg[0] == "new_robot":
                     # New or init robot
-                    rmsg = self.newRobot(msg[1], int(msg[2]), int(msg[3]), msg[4], msg[5])
-                elif msg[0] == "F":
+                    rmsg = self.new_robot(msg[1], int(msg[2]), int(msg[3]), msg[4], msg[5])
+                elif msg[0] == "move_forward":
                     # moves the robot forward
-                    rmsg = self.moveForward(msg[1])
-                elif msg[0] == "R":
+                    rmsg = self.move_forward(msg[1])
+                elif msg[0] == "turn_right":
                     # turns the robot to the right
-                    rmsg = self.turnRight(msg[1])
-                elif msg[0] == "L":
+                    rmsg = self.turn_right(msg[1])
+                elif msg[0] == "turn_left":
                     # turns the robot to the left
-                    rmsg = self.turnLeft(msg[1])
-                elif msg[0] == "S":
+                    rmsg = self.turn_left(msg[1])
+                elif msg[0] == "look":
                     # performs the look function and returns the result
                     rmsg = str(self.look(msg[1]))
-                elif msg[0] == "P":
+                elif msg[0] == "get_xy_pos":
                     # returns the x,y position of the robot
-                    rmsg = self.getXYpos(msg[1])
-                elif msg[0] == "G":
+                    rmsg = str(self.get_xy_pos(msg[1]))
+                elif msg[0] == "get_cur_file":
                     # returns the path to the current map in use by the sim
                     rmsg = self.cur_file
-                elif msg[0] == "M":
+                elif msg[0] == "modify_cell_look":
                     # modifies the look of a cell without changing its actual value
-                    rmsg = self.modifyCellLook(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
-                elif msg[0] == "A":
+                    rmsg = self.modify_cell_look(x=int(msg[2]), y=int(msg[3]), cell_type=msg[4])
+                elif msg[0] == "get_cur_human_graph":
                     # returns the current version of human_graph
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
-                elif msg[0] == "E":
+                elif msg[0] == "remove_edge":
                     # removes an edge from real_graph
                     key_a = msg[2]
                     key_b = msg[3]
-                    rmsg = self.removeEdge(self.real_graph, int(key_a), int(key_b))
-                elif msg[0] == "C":
+                    rmsg = self.remove_edge(self.real_graph, int(key_a), int(key_b))
+                elif msg[0] == "can_human_move":
                     # returns the ability to move or not
                     rmsg = str(self.can_human_move)
                 else:
                     # updates the current version of human_graph
-                    rmsg = self.updateHumanGraph(message)
+                    rmsg = self.update_human_graph(message)
             except Exception as e:
                 # raise #debug. If error just carry on
                 rmsg = "Server Error"

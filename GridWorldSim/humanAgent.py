@@ -100,25 +100,6 @@ class HumanAgent():
 
         return goal
 
-    def removeEdge(self, key_a, key_b):
-        self.removeSingleEdge(key_a, key_b)
-        self.removeSingleEdge(key_b, key_a)
-        return "Human OK"
-
-    def removeSingleEdge(self, from_key, to_key):
-        # pull out neighbors of from vertex
-        neighbors_from = self.real_graph.get_vertex(from_key).get_neighbors()
-
-        # remove neighbor with matching key
-        for key in neighbors_from.keys():
-            if key == to_key:
-                del neighbors_from[key]
-                break
-
-        print("Human removed edges between keys: ", (from_key, to_key))
-
-
-
     def move(self, goal):
         i = 1
         goal_pose = goal.get_xy(self.world_size)
@@ -127,11 +108,10 @@ class HumanAgent():
             # check sim to find allowance to move
             can_move = False
             while not can_move:
-                
                 can_move = self.robot.checkMove()
                 if not can_move:
                     print("Waiting to move...")
-                    time.sleep(0.5)
+                    time.sleep(1)
 
             valid, changed = self.robot.look()
             
