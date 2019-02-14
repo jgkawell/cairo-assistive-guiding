@@ -113,10 +113,15 @@ class GridWorldSim(tk.Tk):
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
         self.openWorld(self.defaultWorld)
+
+        # Setup graphs for handling world information
         self.human_graph = path_planning.Graph()
         self.real_graph = path_planning.Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
         self.removed_edges = {}
+
+        # Other variables for sim
+        self.can_human_move = False
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -396,6 +401,11 @@ class GridWorldSim(tk.Tk):
         if self.look(rob_name)[0]:  # Clear to move
             # move to next grid square
             self.robots[rob_name].forward(20)
+            # reset can_human_move back to false to keep the human from advancing
+            # until the planning agent allows it
+            if rob_name == "HumanAgent":
+                self.can_human_move = False
+                
             return "OK"
         else:
             # If not clear (None), then don't move
@@ -605,6 +615,9 @@ class GridWorldSim(tk.Tk):
                     key_a = msg[2]
                     key_b = msg[3]
                     rmsg = self.removeEdge(self.real_graph, int(key_a), int(key_b))
+                elif msg[0] == "C":
+                    # returns the ability to move or not
+                    rmsg = str(self.can_human_move)
                 else:
                     # updates the current version of human_graph
                     rmsg = self.updateHumanGraph(message)

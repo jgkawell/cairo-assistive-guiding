@@ -20,6 +20,7 @@ import path_planning
 import pickle
 import numpy as np
 import copy
+import time
 
 class HumanAgent():
 
@@ -122,6 +123,16 @@ class HumanAgent():
         i = 1
         goal_pose = goal.get_xy(self.world_size)
         while (self.robot.posx, self.robot.posy) != goal_pose:
+            
+            # check sim to find allowance to move
+            can_move = False
+            while not can_move:
+                
+                can_move = self.robot.checkMove()
+                if not can_move:
+                    print("Waiting to move...")
+                    time.sleep(0.5)
+
             valid, changed = self.robot.look()
             
             # found new world knowledge

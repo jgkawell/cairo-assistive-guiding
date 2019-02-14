@@ -120,6 +120,9 @@ class GRobot():
     def removeEdge(self, key_a, key_b):
         return self._send("E " + self.rname + " " + str(key_a) + " " + str(key_b))
 
+    def checkMove(self):
+        return eval(self._send("C " + self.rname))
+
 
 
 def demo():
