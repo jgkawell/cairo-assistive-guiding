@@ -116,8 +116,6 @@ class GridWorldSim(tk.Tk):
 
         # Setup graphs for handling world information
         self.human_graph = path_planning.Graph()
-        self.real_graph = path_planning.Graph()
-        self.real_graph.setup_graph(self.world, self.world_size)
         self.removed_edges = {}
 
         # Other variables for sim
@@ -333,6 +331,10 @@ class GridWorldSim(tk.Tk):
     def openWorld(self, filename):
         self.world = pickle.load(open(filename, 'rb'))
         self.world_size = len(self.world)
+
+        # rebuild graph world
+        self.real_graph = path_planning.Graph()
+        self.real_graph.setup_graph(self.world, self.world_size)
 
         # reset unexplored map
         exploredValue = True

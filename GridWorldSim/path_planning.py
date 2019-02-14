@@ -56,9 +56,6 @@ class Vertex():
     def __hash__(self):
         return hash(self.key)
 
-
-
-
 class Graph():
     def __init__(self, directed=False):
         self.vertices = {}
@@ -115,13 +112,15 @@ class Path():
         self.total = self.calculate_total()
         self.size = len(self.vertex_keys)
         self.idx = 0
+        self.obstacle = None
 
-    def add_vertex(self, new_key, new_distance, new_value):
+    def add_vertex(self, new_key, new_distance, new_value, obstacle=None):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.value += new_value
         self.total = self.calculate_total()
         self.size += 1
+        self.obstacle = obstacle
 
     def calculate_total(self):
         return self.value - (0.001 * self.distance)
@@ -152,7 +151,16 @@ def trace(vertex, graph):
         curr = v_parent
     return trace
 
-def a_star(graph, start, goals): #pass in start vertex, goal vertices
+def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
+    copy_graph = copy.deepcopy(graph)
+
+    # converte keys to vertices
+    start = copy_graph.get_vertex(start_key)
+    goals = []
+    for key in goal_keys:
+        goals.append(copy_graph.get_vertex(key))
+
+
     frontier = PriorityQueue()
     frontier.put(start, 0)
     frontier_tracker = {}
@@ -167,7 +175,6 @@ def a_star(graph, start, goals): #pass in start vertex, goal vertices
 
         for goal in goals:
             if current == goal:
-                print("Found closest goal: ", goal.get_xy(graph.world_size))
                 closest_goal = goal
                 found_goal = True
         if found_goal == True:
@@ -175,7 +182,7 @@ def a_star(graph, start, goals): #pass in start vertex, goal vertices
 
         neighbors = current.get_neighbors()
         for key, info in neighbors.items():
-            neighbor = graph.get_vertex(key)
+            neighbor = copy_graph.get_vertex(key)
             neighbor_distance = info[1]
             cost = current.dist + neighbor_distance #assume uniform cost across all edges
 
@@ -192,7 +199,7 @@ def a_star(graph, start, goals): #pass in start vertex, goal vertices
 
                 highest_priority = sys.maxsize #highest_priority = goal with lowest estimated cost
                 for goal in goals:
-                    priority = cost + heuristic(goal.get_xy(graph.world_size), neighbor.get_xy(graph.world_size))
+                    priority = cost + heuristic(goal.get_xy(copy_graph.world_size), neighbor.get_xy(copy_graph.world_size))
                     if priority < highest_priority:
                         highest_priority = priority
 
@@ -200,15 +207,10 @@ def a_star(graph, start, goals): #pass in start vertex, goal vertices
                 neighbor.parent = current.key
 
     # reverse and convert to list
-    list_path = list(reversed(trace(closest_goal, graph)))
+    list_path = list(reversed(trace(closest_goal, copy_graph)))
     path = Path()
-    for (x,y) in list_path:
-        path.add_vertex(graph.get_key([x,y]), new_distance=1, new_value=0)
-
-    #not sure what this is for
-    # new_path = []
-    # for xy in path:
-    #     new_path.append(graph.get_key(xy))
+    for xy in list_path:
+        path.add_vertex(copy_graph.get_key(xy), new_distance=1, new_value=0)
 
     return path
 

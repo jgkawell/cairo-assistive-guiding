@@ -29,7 +29,7 @@ class PlanningAgent():
 
         # abstraction/optimization variables
         self.value_limit = -sys.maxsize
-        self.reward_keys = []
+        self.goal_keys = []
         self.show_abstraction = False
         self.desired_path = Path()
         self.mitigation_path = Path()
@@ -39,6 +39,8 @@ class PlanningAgent():
         self.world_size = len(self.world)
 
     def run(self):
+        print("Running...")
+
         # set up the real true graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
@@ -46,7 +48,7 @@ class PlanningAgent():
         # get reward keys
         for vertex in self.real_graph:
             if vertex.cell_type == "Reward":
-                self.reward_keys.append(vertex.key)
+                self.goal_keys.append(vertex.key)
 
         # get human graph from sim
         self.human_graph = self.getHumanGraph()
@@ -56,12 +58,16 @@ class PlanningAgent():
         self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
         
         # run plan and move until human reaches a goal
-        while self.human_position not in self.reward_keys:
+        while self.human_position not in self.goal_keys:
             # plan action
-            self.plan()
+            found_sol = self.plan()
 
-            # execute action
-            self.move()
+            if found_sol:
+                # execute action
+                self.move()
+
+            # allow the human to move
+            self.robot.set_can_human_move(True)
 
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
@@ -106,44 +112,70 @@ class PlanningAgent():
                 # pauses
                 time.sleep(0.25)
 
+            return found_sol
+
     def findSolution(self, start_key):
-        # find all solution paths and rank them by total value
-        best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.reward_keys, self.value_limit)
-        best_paths.sort(key=lambda x: x.total, reverse=True)
+            # find all solution paths and rank them by total value
+            best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.value_limit)
+            best_paths.sort(key=lambda x: x.total, reverse=True)
 
-        # generate the expected human path
-        human_path = path_planning.a_star(self.human_graph, start_key, self.reward_keys)
+            # generate the expected human path
+            human_path = path_planning.a_star(self.human_graph, start_key, self.goal_keys)
 
-        # find paths with too low of a total value
-        remove_list = []
-        for path in best_paths:
-            if path.total < 0:
-                remove_list.append(path)
-        
-        # remove paths with to low of a total value
-        for path in remove_list:
-            best_paths.remove(path)
-
-        # print best paths info
-        print("Found paths: ", len(best_paths))
-        for path in best_paths:
-            print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
+            # find paths with too low of a total value
+            remove_list = []
+            for path in best_paths:
+                if path.total < 0:
+                    remove_list.append(path)
             
-        # print human path info
-        print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
+            # remove paths with too low of a total value
+            for path in remove_list:
+                best_paths.remove(path)
 
-        # find the locations for obstacles for each path
-        obstacles_for_paths = {}
-        for path in best_paths:
-            # copy graph for recursion
-            copy_graph = copy.deepcopy(self.abstract_graph)
-            obstacles_for_paths[path] = []
-            self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
+            # print best paths info
+            print("Found paths: ", len(best_paths))
+            for path in best_paths:
+                print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
+                
+            # print human path info
+            print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
-        for obstacle in obstacles_for_paths[best_paths[0]]:
-            self.removeEdgeFromRealGraph(obstacle[0], obstacle[1])
+            # find the locations for obstacles for each path
+            obstacles_for_paths = {}
+            for path in best_paths:
+                # copy graph for recursion
+                copy_graph = copy.deepcopy(self.human_graph)
+                obstacles_for_paths[path] = []
+                self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
 
-        return True
+
+            # iterate through all the obstacle lists to find a solution
+            found_sol = False
+            for obstacle_list in obstacles_for_paths.values():
+                found_sol = self.planMitigationPath(obstacle_list, self.real_graph.get_vertex(start_key))
+
+            return True
+
+    def planMitigationPath(self, obstacle_list, human_position):
+        found_sol = False
+        copy_graph = copy.deepcopy(self.real_graph)
+        mitigation_paths = {}
+        robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+
+        # iterate through all the obstacles in the list and find the mitigation paths
+        for obstacle in obstacle_list:
+            obstacle_vertex = self.real_graph.get_vertex(obstacle)
+            robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_vertex])
+            human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_vertex])
+
+            # check to see if the robot can get their before the human
+            if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
+                found_sol = True
+                for key in robot_path_to_obstacle:
+                    self.mitigation_path.add_vertex(key, new_distance=1, new_value=0)
+
+
+        return found_sol
 
     # finds the obstacles to place that forces the human on the desired path
     # recursively checks the human's predicted route after each obstacle to generate list
@@ -153,22 +185,22 @@ class PlanningAgent():
         
         # check for bad key
         if key_from != -1:
-            x = self.abstract_graph.get_vertex(key_from).get_xy(self.world_size)
-            y = self.abstract_graph.get_vertex(key_to).get_xy(self.world_size)
+            # print for debug
+            xy_from = self.real_graph.get_vertex(key_from).get_xy(self.world_size)
+            xy_to = self.real_graph.get_vertex(key_to).get_xy(self.world_size)
+            print("Need obstacle between: ", (xy_from, xy_to))
 
-            print("Obstacle: ", (x, y))
             # save the obstacle location
             obstacles_for_paths[path].append((key_from, key_to))
-            # apply obstacle (remove edge)
-            start_key = key_from
-            end_key = key_to
-            self.removeEdgeFromGivenGraph(copy_graph, start_key, end_key)
 
-            # generate the expected human path
-            human_path = path_planning.a_star(self.human_graph, start_key, self.reward_keys)
+            # apply obstacle (remove edge)
+            self.removeEdgeFromGivenGraph(copy_graph, key_from, key_to)
+
+            # generate the expected human path after obstacle
+            human_path = path_planning.a_star(copy_graph, key_from, self.goal_keys)
 
             # recurse to find obtacles with this new human path
-            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, new_human_path)
+            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
         else:
             return obstacles_for_paths
 
@@ -179,16 +211,15 @@ class PlanningAgent():
         key_from = -1
         key_to = -1
 
-        # iterate through robot path and check for divergence
+        # iterate through desired path and check for divergence
         for i in range(len(desired_path)):
             key_desired = desired_path[i]
             key_human = human_path[i]
 
-            # if the robot key doesn't match the human key then return
+            # if the desired key doesn't match the human key then return
             # the human key and the previous human key
             if key_desired != key_human:
-                prev_human = self.abstract_graph.get_vertex(human_path[i-1])
-                key_from = prev_human.key
+                key_from = human_path[i-1]
                 key_to = key_human
                 del(desired_path[0:i-1])
                 break
@@ -201,31 +232,11 @@ class PlanningAgent():
     # given two keys in the abstract graph, this removes the keys from
     # real_graph and propagates the change to the sim
     def removeEdgeFromRealGraph(self, key_a, key_b):
-        # pull out vertices
-        vertex_a_abstract = self.abstract_graph.get_vertex(key_a)
-        vertex_a_real = self.real_graph.get_vertex(key_a)
-
-        # find neighbors
-        real_neighbors = vertex_a_real.get_neighbors()
-        abstract_neighbors = vertex_a_abstract.get_neighbors()
-
-        # find the direction in the abstract graph
-        abstract_direction = 0
-        for key, info in abstract_neighbors.items():
-            if key == key_b:
-                abstract_direction = info[0]
-
-        # find the real neighbor's key
-        real_neighbor_key = -1
-        for key, info in real_neighbors.items():
-            if info[0] == abstract_direction:
-                real_neighbor_key = key
-
-        # remove from local real world
-        self.removeEdgeFromGivenGraph(self.real_graph, key_a, real_neighbor_key)
+       # remove from local real world
+        self.removeEdgeFromGivenGraph(self.real_graph, key_a, key_b)
 
         # remove from real world in sim
-        self.robot.remove_edge(key_a, real_neighbor_key)
+        self.robot.remove_edge(key_a, key_b)
 
     # bidirectional removal of and edge given the graph and keys
     def removeEdgeFromGivenGraph(self, graph, key_a, key_b):
@@ -240,7 +251,7 @@ class PlanningAgent():
         # remove neighbor with matching key
         for key in neighbors_from.keys():
             if key == to_key:
-                del neighbors_from[key]
+                del(neighbors_from[key])
                 break
 
     # creates the abstract representaion of the world
@@ -275,11 +286,11 @@ class PlanningAgent():
 
         return size
 
-    # add vertices with a choice-value > 2 (intersections) AND reward vertices
+    # add vertices with a choice-value > 2 (intersections) AND reward vertices AND human position
     def generateInitialVertices(self):
         key_list = []
         for vertex in self.real_graph:
-            if len(vertex.get_neighbors()) > 2 or vertex.cell_type == "Reward":
+            if len(vertex.get_neighbors()) > 2 or vertex.cell_type == "Reward" or vertex.key == self.human_position:
                 # create new vertex
                 copy_vertex = copy.deepcopy(vertex)
 

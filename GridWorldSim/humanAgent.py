@@ -67,8 +67,8 @@ class HumanAgent():
         self.robot._send(serialized_graph, "byte")
 
     def run(self):
-        goal = self.plan()
-        self.move(goal)
+        self.plan()
+        self.move()
 
     def plan(self):
         # generate graph world
@@ -76,39 +76,31 @@ class HumanAgent():
         self.real_graph.setup_graph(self.world, self.world_size)
         self.sendGraph()
 
-        # generate start and goal states
-        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        goal_x, goal_y = self.reward_states[randint(0, len(self.reward_states)-1)]
+        # generate start state
+        start_x, start_y = 19, 22 #self.empty_states[randint(0, len(self.empty_states)-1)]
 
         # build start info
         xy = (start_x, start_y)
-        start_key = self.real_graph.get_key(xy)
-        start = self.real_graph.get_vertex(start_key)
+        start = self.real_graph.get_key(xy)
         print("Start: " + str(xy))
 
         # build goal info
-        xy = (goal_x, goal_y)
-        goal_key = self.real_graph.get_key(xy)
-        goal = self.real_graph.get_vertex(goal_key)
-        print("Goal: " + str(xy))
+        self.goals = []
+        for xy in self.reward_states:
+            goal = self.real_graph.get_key(xy)
+            self.goals.append(goal)
+            print("Goal: " + str(xy))
 
         # recreate robot with
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         #path plan with A*
-        goal_1 = self.real_graph.get_vertex(self.real_graph.get_key([0,29]))
-        goal_2 = self.real_graph.get_vertex(self.real_graph.get_key([29, 0]))
-        goal_3 = self.real_graph.get_vertex(self.real_graph.get_key([29, 9]))
-        self.path = a_star(self.real_graph, start, [goal, goal_1, goal_2, goal_3])
+        self.path = a_star(self.real_graph, start, self.goals)
 
-        closest_goal_key = self.path.vertex_keys[len(self.path.vertex_keys)-1]
-        return self.real_graph.get_vertex(closest_goal_key)
-
-    def move(self, goal):
+    def move(self):
         i = 1
-        goal_pose = goal.get_xy(self.world_size)
-        print("Want to move to ", goal_pose)
-        while (self.robot.posx, self.robot.posy) != goal_pose:
+        cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+        while cur_key not in self.goals:
 
             # check sim to find allowance to move
             can_move = False
@@ -129,26 +121,33 @@ class HumanAgent():
                 # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
-                start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
+                start = self.real_graph.get_key(xy)
                 start.parent = -1
-                self.path = a_star(self.real_graph, start, [goal])
+                self.path = a_star(self.real_graph, start, self.goals)
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
+                
+                # move and reset cur_key
                 self.move_helper(coord)
+                cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
 
                 # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
-                start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
+                start = self.real_graph.get_key(xy)
                 start.parent = -1
-                self.path = a_star(self.real_graph, start, [goal])
+                self.path = a_star(self.real_graph, start, self.goals)
 
             else:
-                coord = self.path[i]
+                coord = self.real_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
+                
+                # move and reset cur_key
                 self.move_helper(coord)
+                cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+                
                 i += 1
 
     def getHumanGraph(self):
