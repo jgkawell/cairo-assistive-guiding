@@ -92,19 +92,23 @@ class HumanAgent():
         goal = self.real_graph.get_vertex(goal_key)
         print("Goal: " + str(xy))
 
-        # recreate robot with 
+        # recreate robot with
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         #path plan with A*
-        self.path = a_star(self.real_graph, start, goal)
+        goal_1 = self.real_graph.get_vertex(self.real_graph.get_key([0,29]))
+        goal_2 = self.real_graph.get_vertex(self.real_graph.get_key([29, 0]))
+        self.path = a_star(self.real_graph, start, [goal, goal_1, goal_2])
 
-        return goal
+        closest_goal_key = self.path.vertex_keys[len(self.path.vertex_keys)-1]
+        return self.real_graph.get_vertex(closest_goal_key)
 
     def move(self, goal):
         i = 1
         goal_pose = goal.get_xy(self.world_size)
+        print("Want to move to ", goal_pose)
         while (self.robot.posx, self.robot.posy) != goal_pose:
-            
+
             # check sim to find allowance to move
             can_move = False
             while not can_move:
@@ -114,7 +118,7 @@ class HumanAgent():
                     time.sleep(1)
 
             valid, changed = self.robot.look()
-            
+
             # found new world knowledge
             if changed:
                 print("New world knowledge!")
@@ -126,7 +130,7 @@ class HumanAgent():
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
                 start.parent = -1
-                self.path = a_star(self.real_graph, start, goal)
+                self.path = a_star(self.real_graph, start, [goal])
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
@@ -139,7 +143,7 @@ class HumanAgent():
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_vertex(self.real_graph.get_key(xy))
                 start.parent = -1
-                self.path = a_star(self.real_graph, start, goal)
+                self.path = a_star(self.real_graph, start, [goal])
 
             else:
                 coord = self.path[i]
@@ -194,7 +198,7 @@ class HumanAgent():
                 self.robot.move_left()
                 msg = self.robot.move_forward()
 
-            self.heading = 90            
+            self.heading = 90
 
             if msg == "OK": self.robot.posy += 1
 
@@ -213,7 +217,7 @@ class HumanAgent():
                 self.robot.move_right()
                 msg = self.robot.move_forward()
 
-            self.heading = 180            
+            self.heading = 180
 
             if msg == "OK": self.robot.posx -= 1
 
@@ -232,7 +236,7 @@ class HumanAgent():
             elif self.heading == 270: # S
                 msg = self.robot.move_forward()
 
-            self.heading = 270            
+            self.heading = 270
 
             if msg == "OK": self.robot.posy -= 1
 

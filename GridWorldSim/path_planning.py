@@ -56,6 +56,9 @@ class Vertex():
     def __hash__(self):
         return hash(self.key)
 
+
+
+
 class Graph():
     def __init__(self, directed=False):
         self.vertices = {}
@@ -82,7 +85,7 @@ class Graph():
                     self.add_edge(i, i-world_size, direction=3) #cell south
                 if i % world_size != 0 and self.get_vertex(i-1).cell_type != "Wall":
                     self.add_edge(i, i-1, direction=4) #cell west
-                
+
 
     def add_vertex(self, vertex):
         self.vertices[vertex.key] = vertex
@@ -110,15 +113,29 @@ class Path():
         self.distance = distance
         self.value = value
         self.total = self.calculate_total()
+        self.size = len(self.vertex_keys)
+        self.idx = 0
 
     def add_vertex(self, new_key, new_distance, new_value):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.value += new_value
         self.total = self.calculate_total()
+        self.size += 1
 
     def calculate_total(self):
         return self.value - (0.001 * self.distance)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.idx += 1
+        try:
+            return self.vertex_keys[self.idx-1]
+        except IndexError:
+            self.idx = 0
+            raise StopIteration
 
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
@@ -135,7 +152,7 @@ def trace(vertex, graph):
         curr = v_parent
     return trace
 
-def a_star(graph, start, goal):
+def a_star(graph, start, goals): #pass in start vertex, goal vertices
     frontier = PriorityQueue()
     frontier.put(start, 0)
     frontier_tracker = {}
@@ -144,39 +161,57 @@ def a_star(graph, start, goal):
     start.dist = 0
     cost_so_far = {}
     cost_so_far[start] = 0
+    found_goal = False
     while not frontier.empty():
         current = frontier.get()
 
-        if current == goal: break
+        for goal in goals:
+            if current == goal:
+                print("Found closest goal: ", goal.get_xy(graph.world_size))
+                closest_goal = goal
+                found_goal = True
+        if found_goal == True:
+            break
 
         neighbors = current.get_neighbors()
         for key, info in neighbors.items():
             neighbor = graph.get_vertex(key)
             neighbor_distance = info[1]
             cost = current.dist + neighbor_distance #assume uniform cost across all edges
-            
+
             #found a better path to neighbor
-            if cost < neighbor.dist and neighbor in frontier_tracker: 
+            if cost < neighbor.dist and neighbor in frontier_tracker:
                 frontier_tracker.pop(neighbor)
-            
+
             if cost < neighbor.dist and neighbor in cost_so_far:
                 cost_so_far.pop(neighbor)
 
             if neighbor not in frontier_tracker and neighbor not in cost_so_far:
                 neighbor.dist = cost
                 frontier_tracker[neighbor] = cost
-                priority = cost + heuristic(goal.get_xy(graph.world_size), neighbor.get_xy(graph.world_size))
-                frontier.put(neighbor, priority)
+
+                highest_priority = sys.maxsize #highest_priority = goal with lowest estimated cost
+                for goal in goals:
+                    priority = cost + heuristic(goal.get_xy(graph.world_size), neighbor.get_xy(graph.world_size))
+                    if priority < highest_priority:
+                        highest_priority = priority
+
+                frontier.put(neighbor, highest_priority)
                 neighbor.parent = current.key
 
     # reverse and convert to list
-    path = list(reversed(trace(goal, graph)))
+    list_path = list(reversed(trace(closest_goal, graph)))
+    path = Path()
+    for (x,y) in list_path:
+        path.add_vertex(graph.get_key([x,y]), new_distance=1, new_value=0)
 
-    new_path = []
-    for xy in path:
-        new_path.append(graph.get_key(xy))
-
-    return path 
+    #not sure what this is for
+    # new_path = []
+    # for xy in path:
+    #     new_path.append(graph.get_key(xy))
+    for v in path:
+        print(graph.get_vertex(v).get_xy(graph.world_size))
+    return path
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects
@@ -194,7 +229,7 @@ def find_paths(graph, start_key, goal_keys, value_limit):
 def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, paths):
     # pull out neighbors to iterate through
     cur_neighbors = cur_vertex.get_neighbors()
-    
+
     # iterate through neighbors recursively diving deeper into the paths
     for key, info in cur_neighbors.items():
         # make sure not to recurse to previous states
