@@ -36,7 +36,7 @@ class HumanAgent():
         self.real_graph = None
 
         # get file name from simulator
-        file_name = self.robot.getFile()
+        file_name = self.robot.get_cur_file()
 
         # import world
         self.world = pickle.load(open(file_name, 'rb'))
@@ -108,7 +108,7 @@ class HumanAgent():
             # check sim to find allowance to move
             can_move = False
             while not can_move:
-                can_move = self.robot.checkMove()
+                can_move = self.robot.can_human_move()
                 if not can_move:
                     print("Waiting to move...")
                     time.sleep(1)
@@ -148,7 +148,7 @@ class HumanAgent():
 
     def getHumanGraph(self):
         sys.modules['path_planning'] = path_planning
-        return pickle.loads(self.robot.getGraph())
+        return pickle.loads(self.robot.get_cur_human_graph())
 
     def move_helper(self, coord):
         (x, y) = coord
@@ -163,17 +163,17 @@ class HumanAgent():
         # east
         if direction == (1, 0):
             if self.heading == 0: # E
-                msg = self.robot.forward()
+                msg = self.robot.move_forward()
             elif self.heading == 90: # N
-                self.robot.right()
-                msg = self.robot.forward()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
             elif self.heading == 180: # W
-                self.robot.right()
-                self.robot.right()
-                msg = self.robot.forward()
+                self.robot.move_right()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
             elif self.heading == 270: # S
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
 
             self.heading = 0
 
@@ -182,17 +182,17 @@ class HumanAgent():
         # north
         elif direction == (0, 1):
             if self.heading == 0: # E
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
             elif self.heading == 90: # N
-                msg = self.robot.forward()
+                msg = self.robot.move_forward()
             elif self.heading == 180: # W
-                self.robot.right()
-                msg = self.robot.forward()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
             elif self.heading == 270: # S
-                self.robot.left()
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
 
             self.heading = 90            
 
@@ -201,17 +201,17 @@ class HumanAgent():
         # west
         elif direction == (-1, 0):
             if self.heading == 0: # E
-                self.robot.left()
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
             elif self.heading == 90: # N
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
             elif self.heading == 180: # W
-                msg = self.robot.forward()
+                msg = self.robot.move_forward()
             elif self.heading == 270: # S
-                self.robot.right()
-                msg = self.robot.forward()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
 
             self.heading = 180            
 
@@ -220,17 +220,17 @@ class HumanAgent():
         # south
         elif direction == (0, -1):
             if self.heading == 0: # E
-                self.robot.right()
-                msg = self.robot.forward()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
             elif self.heading == 90: # N
-                self.robot.left()
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
             elif self.heading == 180: # W
-                self.robot.left()
-                msg = self.robot.forward()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
             elif self.heading == 270: # S
-                msg = self.robot.forward()
+                msg = self.robot.move_forward()
 
             self.heading = 270            
 

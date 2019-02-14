@@ -23,7 +23,7 @@ class DemoAgent():
         self.robot = GRobot("demoAgent", colour="yellow")
        
         # get file name from simulator
-        file_name = self.robot.getFile()
+        file_name = self.robot.get_cur_file()
 
         # import world
         new_world = pickle.load(open(file_name, 'rb'))
@@ -57,11 +57,11 @@ class DemoAgent():
                 if char == 'q' or char == 'Q':
                     break
                 elif char == curses.KEY_RIGHT:
-                    result = self.robot.right()
+                    result = self.robot.move_right()
                 elif char == curses.KEY_LEFT:
-                    result = self.robot.left()
+                    result = self.robot.move_left()
                 elif char == curses.KEY_UP:
-                    result = self.robot.forward()
+                    result = self.robot.move_forward()
 
                 result = self.robot.look()
 

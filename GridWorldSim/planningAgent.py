@@ -7,7 +7,7 @@ except:
 
 # Setup imports
 from grobot import GRobot
-from path_planning import Graph
+from path_planning import Graph, Path
 from timeit import default_timer as timer
 import path_planning
 import pickle
@@ -31,9 +31,11 @@ class PlanningAgent():
         self.value_limit = -sys.maxsize
         self.reward_keys = []
         self.show_abstraction = False
+        self.desired_path = Path()
+        self.mitigation_path = Path()
 
         # import world
-        self.world = pickle.load(open(self.robot.getFile(), 'rb'))
+        self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
         self.world_size = len(self.world)
 
     def run(self):
@@ -49,48 +51,60 @@ class PlanningAgent():
         # get human graph from sim
         self.human_graph = self.getHumanGraph()
 
-        # plan action
-        self.plan()
+        
+        # request the current human position from the sim
+        self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+        
+        # run plan and move until human reaches a goal
+        while self.human_position not in self.reward_keys:
+            # plan action
+            self.plan()
 
-        # execute action
-        self.move()
+            # execute action
+            self.move()
+
+            # request the current human position from the sim
+            self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
 
     # gets the human_graph from the sim
     def getHumanGraph(self):
         sys.modules['path_planning'] = path_planning
-        return pickle.loads(self.robot.getGraph())
+        return pickle.loads(self.robot.get_cur_human_graph())
 
     # plan a path to execute
     def plan(self):
-        found_sol = False
-        maxed = False
-        level = 0
+        # if the human has diverged from the desired path, replan
+        if self.human_position not in self.desired_path.vertex_keys:
+            found_sol = False
+            maxed = False
+            level = 0
+            old_size = 0
 
-        old_size = 0
-        while not found_sol and not maxed:
+            # loop plan until a solution is found or the abstraction is maxed
+            while not found_sol and not maxed:
 
-            start = timer()
+                start = timer()
 
-            # simplify for certain level
-            new_size = self.simplifyWorld(old_size, level=level)
-            level += 1
+                # simplify for certain level
+                new_size = self.simplifyWorld(old_size, level=level)
+                level += 1
 
-            # check to see if abstraction has changed sizes, if not, stop
-            if old_size == new_size:
-                maxed = True
-            else:
-                old_size = new_size
+                # check to see if abstraction has changed sizes; if not, stop
+                if old_size == new_size:
+                    maxed = True
+                else:
+                    old_size = new_size
 
-            # find solution path
-            self.human_position = self.real_graph.get_key(self.robot.getPosition(self.human_name))
-            found_sol = self.findSolution(self.human_position)
+                # find best solution for the current abstraction level
+                # and save to self.desired_path and self.mitigation_path
+                found_sol = self.findSolution(self.human_position)
 
-            end = timer()
-            total = end - start
-            print("Took: ", total)
+                end = timer()
+                total = end - start
+                print("Took: ", total)
 
-            # pauses
-            time.sleep(0.25)
+                # pauses
+                time.sleep(0.25)
 
     def findSolution(self, start_key):
         # find all solution paths and rank them by total value
@@ -211,7 +225,7 @@ class PlanningAgent():
         self.removeEdgeFromGivenGraph(self.real_graph, key_a, real_neighbor_key)
 
         # remove from real world in sim
-        self.robot.removeEdge(key_a, real_neighbor_key)
+        self.robot.remove_edge(key_a, real_neighbor_key)
 
     # bidirectional removal of and edge given the graph and keys
     def removeEdgeFromGivenGraph(self, graph, key_a, key_b):
@@ -257,7 +271,7 @@ class PlanningAgent():
         for vertex in self.abstract_graph:
             size += 1
             x, y = vertex.get_xy(self.world_size)
-            if self.show_abstraction: self.robot.modifyCellLook(x, y, "Door")
+            if self.show_abstraction: self.robot.modify_cell_look(x, y, "Door")
 
         return size
 

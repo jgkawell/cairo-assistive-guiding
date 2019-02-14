@@ -617,6 +617,10 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "can_human_move":
                     # returns the ability to move or not
                     rmsg = str(self.can_human_move)
+                elif msg[0] == "set_can_human_move":
+                    # sets the ability to move or not
+                    self.can_human_move = eval(msg[1])
+                    rmsg = "OK"
                 else:
                     # updates the current version of human_graph
                     rmsg = self.update_human_graph(message)

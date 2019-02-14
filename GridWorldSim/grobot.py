@@ -44,8 +44,7 @@ class GRobot():
         self.posy=posy
         self.colour=colour
         self.rshape=rshape
-        msg = "new_robot "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape
-        self._send(msg)
+        self.new_robot(rname, posx, posy, colour, rshape)
 
     def _send(self, msg, send_type="string", rec_type="string"):
         # Send message and get respose from Simulator
@@ -88,36 +87,42 @@ class GRobot():
 
         return rmsg
 
-    def forward(self):
+    def new_robot(self, rname, posx, posy, colour, rshape):
+        self._send("new_robot "+str(rname)+" "+str(posx)+" "+str(posy)+" "+colour+" "+rshape)
+
+    def move_forward(self):
         return self._send("move_forward " + self.rname)
 
-    def right(self):
+    def move_right(self):
         return self._send("turn_right "+ self.rname+" ")
 
-    def left(self):
+    def move_left(self):
         return self._send("turn_left " + self.rname+" ")
 
     def look(self):
         msg = self._send("look " + self.rname)
         return eval(msg)
 
-    def getPosition(self, rob_name):
+    def get_xy_pos(self, rob_name):
         return eval(self._send("get_xy_pos " + rob_name))
 
-    def getFile(self):
+    def get_cur_file(self):
         return self._send("get_cur_file " + self.rname)
 
-    def modifyCellLook(self, x, y, cell_type):
+    def modify_cell_look(self, x, y, cell_type):
         return self._send("modify_cell_look " + self.rname + " " + str(x) + " " + str(y) + " " + cell_type)
 
-    def getGraph(self):
+    def get_cur_human_graph(self):
         return self._send("get_cur_human_graph " + self.rname, rec_type="byte")
 
-    def removeEdge(self, key_a, key_b):
+    def remove_edge(self, key_a, key_b):
         return self._send("remove_edge " + self.rname + " " + str(key_a) + " " + str(key_b))
 
-    def checkMove(self):
+    def can_human_move(self):
         return eval(self._send("can_human_move " + self.rname))
+
+    def set_can_human_move(self, value):
+        return self._send("set_can_human_move " + str(value))
 
 
 
@@ -125,16 +130,16 @@ def demo():
     # print() used to show return value from method/function calls
     fred=GRobot("fred", 1, 1)
     bill=GRobot("bill", 1, 1, "green")
-    print("Fred forward", fred.forward())
-    print("Bill forward",bill.forward())
-    print("Fred right", fred.right())
-    print("Bill right", bill.right())
+    print("Fred forward", fred.move_forward())
+    print("Bill forward",bill.move_forward())
+    print("Fred right", fred.move_right())
+    print("Bill right", bill.move_right())
     count = 12
     while count > 0:
         print("Fred looks at:", fred.look())
-        print("Fred forward",fred.forward())
+        print("Fred forward",fred.move_forward())
         print("Bill looks at:", bill.look())
-        print ("Bill forward",bill.forward())
+        print ("Bill forward",bill.move_forward())
         count -= 1
     print("Fred looks forward at", fred.look()[2])
     print("Bill looks forward at", bill.look()[2])
@@ -142,16 +147,16 @@ def demo():
 def demo2():
     arthur=GRobot("arthur", 1, 4, "blue")
     ted=GRobot("ted", 4, 4, "yellow")
-    print("Arthur forward", arthur.forward())
-    print("Ted forward",ted.forward())
-    print("Arthur right", arthur.right())
-    print("Ted right", ted.right())
+    print("Arthur forward", arthur.move_forward())
+    print("Ted forward",ted.move_forward())
+    print("Arthur right", arthur.move_right())
+    print("Ted right", ted.move_right())
     count = 12
     while count > 0:
         print("Arthur looks at: ", arthur.look())
-        print("Arthur forward",arthur.forward())
+        print("Arthur forward",arthur.move_forward())
         print("Ted looks at:", ted.look())
-        print ("Ted forward",ted.forward())
+        print ("Ted forward",ted.move_forward())
         count -= 1
     print("Arthur looks at:", arthur.look())
     print("ted looks at:", ted.look())
