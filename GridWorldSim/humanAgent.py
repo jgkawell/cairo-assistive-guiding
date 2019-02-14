@@ -98,7 +98,8 @@ class HumanAgent():
         #path plan with A*
         goal_1 = self.real_graph.get_vertex(self.real_graph.get_key([0,29]))
         goal_2 = self.real_graph.get_vertex(self.real_graph.get_key([29, 0]))
-        self.path = a_star(self.real_graph, start, [goal, goal_1, goal_2])
+        goal_3 = self.real_graph.get_vertex(self.real_graph.get_key([29, 9]))
+        self.path = a_star(self.real_graph, start, [goal, goal_1, goal_2, goal_3])
 
         closest_goal_key = self.path.vertex_keys[len(self.path.vertex_keys)-1]
         return self.real_graph.get_vertex(closest_goal_key)

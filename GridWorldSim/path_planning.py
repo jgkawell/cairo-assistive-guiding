@@ -209,8 +209,7 @@ def a_star(graph, start, goals): #pass in start vertex, goal vertices
     # new_path = []
     # for xy in path:
     #     new_path.append(graph.get_key(xy))
-    for v in path:
-        print(graph.get_vertex(v).get_xy(graph.world_size))
+
     return path
 
 # finds all the possible paths from a start (key) position to given goals (keys)
