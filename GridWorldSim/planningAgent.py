@@ -44,7 +44,7 @@ class PlanningAgent():
         # set up the real true graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
-        
+
         # get reward keys
         for vertex in self.real_graph:
             if vertex.cell_type == "Reward":
@@ -53,10 +53,10 @@ class PlanningAgent():
         # get human graph from sim
         self.human_graph = self.getHumanGraph()
 
-        
+
         # request the current human position from the sim
         self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
-        
+
         # run plan and move until human reaches a goal
         while self.human_position not in self.goal_keys:
             # plan action
@@ -127,7 +127,7 @@ class PlanningAgent():
             for path in best_paths:
                 if path.total < 0:
                     remove_list.append(path)
-            
+
             # remove paths with too low of a total value
             for path in remove_list:
                 best_paths.remove(path)
@@ -136,7 +136,7 @@ class PlanningAgent():
             print("Found paths: ", len(best_paths))
             for path in best_paths:
                 print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
-                
+
             # print human path info
             print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
 
@@ -182,7 +182,7 @@ class PlanningAgent():
     def findObstaclePlacements(self, copy_graph, obstacles_for_paths, path, human_path):
         # find obstacle location
         key_from, key_to = self.findDivergence(path.vertex_keys, human_path.vertex_keys)
-        
+
         # check for bad key
         if key_from != -1:
             # print for debug
@@ -197,10 +197,9 @@ class PlanningAgent():
             self.removeEdgeFromGivenGraph(copy_graph, key_from, key_to)
 
             # generate the expected human path after obstacle
-            human_path = path_planning.a_star(copy_graph, key_from, self.goal_keys)
-
+            human_path_new = path_planning.a_star(copy_graph, key_from, self.goal_keys)
             # recurse to find obtacles with this new human path
-            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
+            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path_new)
         else:
             return obstacles_for_paths
 
@@ -390,7 +389,7 @@ class PlanningAgent():
     def findEdgeInfo(self, key_a, key_b, distance, value):
         # pull out current vertex
         cur_vertex = self.real_graph.get_vertex(key_b)
-        
+
         if key_b in self.abstract_graph.get_vertices():
             # if the key is already a vertex, return the vertex or the max depth has been reached
             # with the distance and value up to that point in the recursion

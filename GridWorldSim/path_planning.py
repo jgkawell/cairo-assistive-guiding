@@ -156,6 +156,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 
     # converte keys to vertices
     start = copy_graph.get_vertex(start_key)
+    start.parent = -1
     goals = []
     for key in goal_keys:
         goals.append(copy_graph.get_vertex(key))
@@ -208,7 +209,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 
     # reverse and convert to list
     list_path = list(reversed(trace(closest_goal, copy_graph)))
-    path = Path()
+    path = Path(vertex_keys=[], distance=0, value=0)
     for xy in list_path:
         path.add_vertex(copy_graph.get_key(xy), new_distance=1, new_value=0)
 
