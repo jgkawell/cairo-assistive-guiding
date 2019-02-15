@@ -33,6 +33,7 @@ class PlanningAgent():
         self.show_abstraction = False
         self.desired_path = Path()
         self.mitigation_path = Path()
+        self.cost_limit = 0.9
 
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
@@ -113,6 +114,8 @@ class PlanningAgent():
                 time.sleep(0.25)
 
             return found_sol
+        else:
+            return True
 
     def findSolution(self, start_key):
             # find all solution paths and rank them by total value
@@ -120,12 +123,12 @@ class PlanningAgent():
             best_paths.sort(key=lambda x: x.total, reverse=True)
 
             # generate the expected human path
-            human_path = path_planning.a_star(self.human_graph, start_key, self.goal_keys)
+            human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
 
             # find paths with too low of a total value
             remove_list = []
             for path in best_paths:
-                if path.total < 0:
+                if path.total < self.cost_limit:
                     remove_list.append(path)
 
             # remove paths with too low of a total value
@@ -144,38 +147,18 @@ class PlanningAgent():
             obstacles_for_paths = {}
             for path in best_paths:
                 # copy graph for recursion
-                copy_graph = copy.deepcopy(self.human_graph)
+                copy_graph = copy.deepcopy(self.abstract_graph)
                 obstacles_for_paths[path] = []
                 self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
 
-
-            # iterate through all the obstacle lists to find a solution
+            # iterate through all the obstacle lists to find a solution (GREEDY)
             found_sol = False
             for obstacle_list in obstacles_for_paths.values():
                 found_sol = self.planMitigationPath(obstacle_list, self.real_graph.get_vertex(start_key))
+                if found_sol:
+                    break
 
             return True
-
-    def planMitigationPath(self, obstacle_list, human_position):
-        found_sol = False
-        copy_graph = copy.deepcopy(self.real_graph)
-        mitigation_paths = {}
-        robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
-
-        # iterate through all the obstacles in the list and find the mitigation paths
-        for obstacle in obstacle_list:
-            obstacle_vertex = self.real_graph.get_vertex(obstacle)
-            robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_vertex])
-            human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_vertex])
-
-            # check to see if the robot can get their before the human
-            if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
-                found_sol = True
-                for key in robot_path_to_obstacle:
-                    self.mitigation_path.add_vertex(key, new_distance=1, new_value=0)
-
-
-        return found_sol
 
     # finds the obstacles to place that forces the human on the desired path
     # recursively checks the human's predicted route after each obstacle to generate list
@@ -201,6 +184,7 @@ class PlanningAgent():
             # recurse to find obtacles with this new human path
             obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path_new)
         else:
+            print("No more obstacles needed! :)")
             return obstacles_for_paths
 
     # finds the point at which the human will diverge from the desired path
@@ -224,6 +208,33 @@ class PlanningAgent():
                 break
 
         return key_from, key_to
+
+
+   
+    def planMitigationPath(self, obstacle_list, human_position):
+        found_sol = False
+        robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+
+        # iterate through all the obstacles in the list and find the mitigation paths
+        for obstacle in obstacle_list:
+            obstacle_vertex = self.real_graph.get_vertex(obstacle)
+            robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_vertex])
+            human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_vertex])
+
+            # check to see if the robot can get their before the human
+            if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
+                found_sol = True
+
+            if found_sol:
+                robot_position = obstacle[0]
+                for key in robot_path_to_obstacle:
+                    # encode obstacle into vertex that needs obstacle placement
+                    if key == obstacle[0]:
+                        self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=obstacle)
+                    else:
+                        self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=None)
+
+        return found_sol
 
     def move(self):
         return
@@ -260,6 +271,7 @@ class PlanningAgent():
         if level == 0:
             # initialize empty graph
             self.abstract_graph = Graph()
+            self.abstract_graph.world_size = self.world_size
             # generate the intial set of vertices
             key_list = self.generateInitialVertices()
             # generate the new edges between vertices

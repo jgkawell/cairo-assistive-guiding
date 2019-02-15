@@ -114,6 +114,8 @@ class Path():
         self.idx = 0
         self.obstacle = None
 
+        # TODO: Change obstacle to list of obstacles or add to vertex object
+
     def add_vertex(self, new_key, new_distance, new_value, obstacle=None):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
@@ -178,6 +180,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
             if current == goal:
                 closest_goal = goal
                 found_goal = True
+                
         if found_goal == True:
             break
 
