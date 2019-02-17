@@ -56,7 +56,7 @@ class GRobot():
             # if sending a string, encode it
             if send_type == "string":
                 msg = msg.encode('utf-8')
-            
+
             self.tcpSock.send(msg)
 
             # recieve input by looping to avoid data loss
@@ -69,7 +69,7 @@ class GRobot():
                     break
 
             # NOTE: this only works in python3, python2 requires you to remove the decode statement
-            if rec_type == "string":        
+            if rec_type == "string":
                 rmsg = data.decode("utf-8")
             else:
                 rmsg = data
@@ -78,7 +78,7 @@ class GRobot():
 
             if rmsg == "":
                 rmsg = "Warning: Receieved Data error"
-        
+
         except Exception as e:
             print(str(e))
             print("Could not send message")
@@ -121,8 +121,14 @@ class GRobot():
     def can_human_move(self):
         return eval(self._send("can_human_move " + self.rname))
 
+    def can_robot_move(self):
+        return eval(self._send("can_robot_move " + self.rname))
+
     def set_can_human_move(self, value):
         return self._send("set_can_human_move " + str(value))
+
+    def set_can_robot_move(self, value):
+        return self._send("set_can_robot_move " + str(value))
 
 
 

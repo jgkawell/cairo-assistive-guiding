@@ -26,6 +26,7 @@ class Vertex():
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
         self.xy = self.get_xy(world_size)
+        self.obstacle = None 
 
         if cell_type == "Reward":
             self.value = 1
@@ -180,7 +181,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
             if current == goal:
                 closest_goal = goal
                 found_goal = True
-                
+
         if found_goal == True:
             break
 

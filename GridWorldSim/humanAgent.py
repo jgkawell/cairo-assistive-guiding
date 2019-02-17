@@ -26,7 +26,7 @@ class HumanAgent():
 
     def __init__(self, knowledge=1, optimal=True):
         # Initialise globals
-        self.robot = GRobot("HumanAgent", colour="yellow")
+        self.robot = GRobot("HumanAgent", colour="blue")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
         self.path = []
         self.knowledge = knowledge
@@ -104,12 +104,13 @@ class HumanAgent():
 
             # check sim to find allowance to move
             can_move = False
+            #human and planner take turns moving
+            self.robot.set_can_robot_move(True)
             while not can_move:
                 can_move = self.robot.can_human_move()
                 if not can_move:
-                    print("Waiting to move...")
+                    print("Human waiting to move...")
                     time.sleep(1)
-
             valid, changed = self.robot.look()
 
             # found new world knowledge
@@ -129,7 +130,7 @@ class HumanAgent():
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
-                
+
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
@@ -143,11 +144,11 @@ class HumanAgent():
 
             else:
                 coord = self.real_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
-                
+
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
-                
+
                 i += 1
 
     def getHumanGraph(self):

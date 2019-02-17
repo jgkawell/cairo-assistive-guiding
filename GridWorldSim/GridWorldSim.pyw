@@ -120,6 +120,7 @@ class GridWorldSim(tk.Tk):
 
         # Other variables for sim
         self.can_human_move = False
+        self.can_robot_move = False
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -407,6 +408,8 @@ class GridWorldSim(tk.Tk):
             # until the planning agent allows it
             if rob_name == "HumanAgent":
                 self.can_human_move = False
+            if rob_name == "PlanningAgent":
+                self.can_robot_move = False
             return "OK"
         else:
             # If not clear (None), then don't move
@@ -619,9 +622,16 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "can_human_move":
                     # returns the ability to move or not
                     rmsg = str(self.can_human_move)
+                elif msg[0] == "can_robot_move":
+                    #returns abliity to move or not for planning agent
+                    rmsg = str(self.can_robot_move)
                 elif msg[0] == "set_can_human_move":
                     # sets the ability to move or not
                     self.can_human_move = eval(msg[1])
+                    rmsg = "OK"
+                elif msg[0] == "set_can_robot_move":
+                    #sets ability for planning agent to move or not
+                    self.can_robot_move = eval(msg[1])
                     rmsg = "OK"
                 else:
                     # updates the current version of human_graph

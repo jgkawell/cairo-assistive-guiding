@@ -20,7 +20,7 @@ class PlanningAgent():
 
     def __init__(self):
         # Initialise globals
-        self.robot = GRobot("PlanningAgent", colour="yellow")
+        self.robot = GRobot("PlanningAgent", posx=20, posy=22, colour="yellow")
 
         # human agent variables
         self.human_graph = None
@@ -34,6 +34,7 @@ class PlanningAgent():
         self.desired_path = Path()
         self.mitigation_path = Path()
         self.cost_limit = 0.9
+        self.heading = 90
 
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
@@ -154,7 +155,7 @@ class PlanningAgent():
             # iterate through all the obstacle lists to find a solution (GREEDY)
             found_sol = False
             for obstacle_list in obstacles_for_paths.values():
-                found_sol = self.planMitigationPath(obstacle_list, self.real_graph.get_vertex(start_key))
+                found_sol = self.planMitigationPath(obstacle_list, start_key)
                 if found_sol:
                     break
 
@@ -210,20 +211,23 @@ class PlanningAgent():
         return key_from, key_to
 
 
-   
+
     def planMitigationPath(self, obstacle_list, human_position):
         found_sol = False
         robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
 
         # iterate through all the obstacles in the list and find the mitigation paths
         for obstacle in obstacle_list:
-            obstacle_vertex = self.real_graph.get_vertex(obstacle)
-            robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_vertex])
-            human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_vertex])
+            obstacle_key = obstacle[1]
+            robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_key])
+            human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_key])
 
             # check to see if the robot can get their before the human
             if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
+                print("FOUND A SOLUTION! ", obstacle_list)
                 found_sol = True
+            else:
+                break #if human closer to first obstacle in list, this plan isn't feasible
 
             if found_sol:
                 robot_position = obstacle[0]
@@ -231,13 +235,116 @@ class PlanningAgent():
                     # encode obstacle into vertex that needs obstacle placement
                     if key == obstacle[0]:
                         self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=obstacle)
+                        self.real_graph.get_vertex(key).obstacle = obstacle
                     else:
                         self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=None)
 
         return found_sol
 
     def move(self):
-        return
+        for vtx_key in self.mitigation_path:
+            vertex = self.real_graph.get_vertex(vtx_key)
+            cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+            #check sim to find allowance to move
+            can_move = False
+            self.robot.set_can_human_move(True)
+            while not can_move:
+                can_move = self.robot.can_robot_move()
+                if not can_move:
+                    print("Planner waiting to move...")
+                    time.sleep(1)
+            if self.real_graph.get_vertex(cur_key).obstacle != None:
+                self.removeEdgeFromRealGraph(key_a=obstacle[0], key_b=obstacle[1])
+
+            self.move_helper(vertex)
+
+        pass
+
+    def move_helper(self, vertex):
+        (x, y) = vertex.get_xy(self.world_size)
+        direction = (x - self.robot.posx, y - self.robot.posy)
+
+        # check for success
+        msg = ""
+
+        # heading: 0=E, 90=N, 180=W, 270=S
+
+        # east
+        if direction == (1, 0):
+            if self.heading == 0: # E
+                msg = self.robot.move_forward()
+            elif self.heading == 90: # N
+                self.robot.move_right()
+                msg = self.robot.move_forward()
+            elif self.heading == 180: # W
+                self.robot.move_right()
+                self.robot.move_right()
+                msg = self.robot.move_forward()
+            elif self.heading == 270: # S
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+
+            self.heading = 0
+
+            if msg == "OK": self.robot.posx += 1
+
+        # north
+        elif direction == (0, 1):
+            if self.heading == 0: # E
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+            elif self.heading == 90: # N
+                msg = self.robot.move_forward()
+            elif self.heading == 180: # W
+                self.robot.move_right()
+                msg = self.robot.move_forward()
+            elif self.heading == 270: # S
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+
+            self.heading = 90
+
+            if msg == "OK": self.robot.posy += 1
+
+        # west
+        elif direction == (-1, 0):
+            if self.heading == 0: # E
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+            elif self.heading == 90: # N
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+            elif self.heading == 180: # W
+                msg = self.robot.move_forward()
+            elif self.heading == 270: # S
+                self.robot.move_right()
+                msg = self.robot.move_forward()
+
+            self.heading = 180
+
+            if msg == "OK": self.robot.posx -= 1
+
+        # south
+        elif direction == (0, -1):
+            if self.heading == 0: # E
+                self.robot.move_right()
+                msg = self.robot.move_forward()
+            elif self.heading == 90: # N
+                self.robot.move_left()
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+            elif self.heading == 180: # W
+                self.robot.move_left()
+                msg = self.robot.move_forward()
+            elif self.heading == 270: # S
+                msg = self.robot.move_forward()
+
+            self.heading = 270
+
+            if msg == "OK": self.robot.posy -= 1
+
 
     # given two keys in the abstract graph, this removes the keys from
     # real_graph and propagates the change to the sim
