@@ -26,7 +26,7 @@ class Vertex():
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
         self.xy = self.get_xy(world_size)
-        self.obstacle = None 
+        self.obstacle = None
 
         if cell_type == "Reward":
             self.value = 1
@@ -117,7 +117,7 @@ class Path():
 
         # TODO: Change obstacle to list of obstacles or add to vertex object
 
-    def add_vertex(self, new_key, new_distance, new_value, obstacle=None):
+    def add_vertex(self, new_key, new_distance=1, new_value=0, obstacle=None):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.value += new_value
@@ -139,6 +139,9 @@ class Path():
             self.idx = 0
             raise StopIteration
 
+    def __len__(self):
+        return self.size
+
 def heuristic(goal_pos, vertex_pos): #manhattan distance - admissible
     (x1, y1) = goal_pos
     (x2, y2) = vertex_pos
@@ -156,7 +159,6 @@ def trace(vertex, graph):
 
 def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
     copy_graph = copy.deepcopy(graph)
-
     # converte keys to vertices
     start = copy_graph.get_vertex(start_key)
     start.parent = -1
@@ -257,3 +259,23 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, pa
                 # pull out new vertex and pass it for the recursion
                 new_vertex = graph.get_vertex(key)
                 recurse_path_finding(graph, new_vertex, goal_keys, value_limit, new_path, paths)
+
+def abstract_to_full_path(real_graph, abstract_path):
+    full_path = []
+    idx = 0
+    while idx != len(abstract_path)-1:
+        from_key, to_key = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
+        mini_path = a_star(real_graph, from_key, [to_key])
+        full_path.extend(mini_path.vertex_keys[:-1])
+        idx += 1
+
+    path = Path(vertex_keys=full_path)
+    path.add_vertex(abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1])
+    return path
+    # full_path = []
+    # idx = 0
+    # while idx != len(abstract_path)-1:
+    #     key_prev, key_next = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
+    #     full_path.append(key_prev)
+    #     #if less than world size, then intermediate cells are horizontal
+    #     if key_prev - key_next < 31: #world size is 31x31

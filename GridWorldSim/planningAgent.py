@@ -129,6 +129,7 @@ class PlanningAgent():
             # find paths with too low of a total value
             remove_list = []
             for path in best_paths:
+                full_path = path_planning.abstract_to_full_path(self.real_graph, path)
                 if path.total < self.cost_limit:
                     remove_list.append(path)
 
@@ -154,9 +155,11 @@ class PlanningAgent():
 
             # iterate through all the obstacle lists to find a solution (GREEDY)
             found_sol = False
-            for obstacle_list in obstacles_for_paths.values():
-                found_sol = self.planMitigationPath(obstacle_list, start_key)
+            for path in obstacles_for_paths.keys():
+                obstacle_list = obstacles_for_paths[path]
+                found_sol = self.planMitigationPath(obstacle_list, start_key, path)
                 if found_sol:
+                    self.desired_path = path
                     break
 
             return True
@@ -212,7 +215,7 @@ class PlanningAgent():
 
 
 
-    def planMitigationPath(self, obstacle_list, human_position):
+    def planMitigationPath(self, obstacle_list, human_position, path):
         found_sol = False
         robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
 
@@ -239,6 +242,9 @@ class PlanningAgent():
                     else:
                         self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=None)
 
+            if found_sol:
+                break
+
         return found_sol
 
     def move(self):
@@ -254,11 +260,11 @@ class PlanningAgent():
                     print("Planner waiting to move...")
                     time.sleep(1)
             if self.real_graph.get_vertex(cur_key).obstacle != None:
+                print("Placing obstacle...")
                 self.removeEdgeFromRealGraph(key_a=obstacle[0], key_b=obstacle[1])
 
             self.move_helper(vertex)
 
-        pass
 
     def move_helper(self, vertex):
         (x, y) = vertex.get_xy(self.world_size)
