@@ -263,7 +263,9 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, pa
 def abstract_to_full_path(real_graph, abstract_path):
     full_path = []
     idx = 0
-    while idx != len(abstract_path)-1:
+    print("Size of path is ", abstract_path.size)
+    while idx < abstract_path.size-1: #TODO: figure out bug: Path.size returns 1 more than number of vertex keys actually in the object 
+        #do a_star on real graph for each set of adjacent intersections represented in abstract_path and store in full_path
         from_key, to_key = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
         mini_path = a_star(real_graph, from_key, [to_key])
         full_path.extend(mini_path.vertex_keys[:-1])
@@ -272,10 +274,3 @@ def abstract_to_full_path(real_graph, abstract_path):
     path = Path(vertex_keys=full_path)
     path.add_vertex(abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1])
     return path
-    # full_path = []
-    # idx = 0
-    # while idx != len(abstract_path)-1:
-    #     key_prev, key_next = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
-    #     full_path.append(key_prev)
-    #     #if less than world size, then intermediate cells are horizontal
-    #     if key_prev - key_next < 31: #world size is 31x31

@@ -129,7 +129,6 @@ class PlanningAgent():
             # find paths with too low of a total value
             remove_list = []
             for path in best_paths:
-                full_path = path_planning.abstract_to_full_path(self.real_graph, path)
                 if path.total < self.cost_limit:
                     remove_list.append(path)
 
@@ -155,11 +154,14 @@ class PlanningAgent():
 
             # iterate through all the obstacle lists to find a solution (GREEDY)
             found_sol = False
-            for path in obstacles_for_paths.keys():
+            for path in obstacles_for_paths.keys(): #get desired path
                 obstacle_list = obstacles_for_paths[path]
-                found_sol = self.planMitigationPath(obstacle_list, start_key, path)
+                #get real graph representation of path
+                full_path = path_planning.abstract_to_full_path(self.real_graph, path)
+                found_sol = self.planMitigationPath(obstacle_list, start_key, full_path)
                 if found_sol:
-                    self.desired_path = path
+                    #get full desired path
+                    self.desired_path = full_path
                     break
 
             return True
