@@ -15,12 +15,13 @@ except:
 # Setup imports
 from grobot import GRobot
 from random import randint
-from path_planning import *
+from path_planning import Graph, PlanningPath, a_star
 import path_planning
 import pickle
 import numpy as np
 import copy
 import time
+import sys
 
 class HumanAgent():
 
@@ -123,7 +124,6 @@ class HumanAgent():
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_key(xy)
-                start.parent = -1
                 self.path = a_star(self.real_graph, start, self.goals)
 
             # if making a random move, rerun A*
@@ -139,7 +139,6 @@ class HumanAgent():
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_key(xy)
-                start.parent = -1
                 self.path = a_star(self.real_graph, start, self.goals)
 
             else:

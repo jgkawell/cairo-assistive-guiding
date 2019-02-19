@@ -105,7 +105,7 @@ class Graph():
     def add_edge(self, from_key, to_key, direction, distance=1, value=0):
         self.vertices[from_key].add_neighbor(to_key, direction, distance, value)
 
-class Path():
+class PlanningPath():
     def __init__(self, vertex_keys=[], distance=0, value=0):
         self.vertex_keys = vertex_keys
         self.distance = distance
@@ -113,7 +113,7 @@ class Path():
         self.total = self.calculate_total()
         self.size = len(self.vertex_keys)
         self.idx = 0
-        self.obstacle = None
+        self.obstacles = {}
 
         # TODO: Change obstacle to list of obstacles or add to vertex object
 
@@ -123,7 +123,7 @@ class Path():
         self.value += new_value
         self.total = self.calculate_total()
         self.size += 1
-        self.obstacle = obstacle
+        self.obstacles[new_key] = obstacle
 
     def calculate_total(self):
         return self.value - (0.001 * self.distance)
@@ -215,7 +215,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 
     # reverse and convert to list
     list_path = list(reversed(trace(closest_goal, copy_graph)))
-    path = Path(vertex_keys=[], distance=0, value=0)
+    path = PlanningPath(vertex_keys=[], distance=0, value=0)
     for xy in list_path:
         path.add_vertex(copy_graph.get_key(xy), new_distance=1, new_value=0)
 
@@ -226,7 +226,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 def find_paths(graph, start_key, goal_keys, value_limit):
     # initialize paths and start vertex
     paths = []
-    cur_path = Path([start_key])
+    cur_path = PlanningPath([start_key])
     start_vertex = graph.get_vertex(start_key)
 
     # start recursion to build out solution path list
@@ -247,7 +247,7 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, pa
             for temp_key in cur_path.vertex_keys:
                 new_vertex_list.append(temp_key)
 
-            new_path = Path(new_vertex_list, cur_path.distance, cur_path.value)
+            new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.value)
             new_path.add_vertex(key, new_distance=info[1], new_value=info[2])
 
             # found solution
@@ -263,14 +263,13 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, pa
 def abstract_to_full_path(real_graph, abstract_path):
     full_path = []
     idx = 0
-    print("Size of path is ", abstract_path.size)
-    while idx < abstract_path.size-1: #TODO: figure out bug: Path.size returns 1 more than number of vertex keys actually in the object 
+    while idx < len(abstract_path.vertex_keys)-1: #TODO: figure out bug: Path.size returns 1 more than number of vertex keys actually in the object 
         #do a_star on real graph for each set of adjacent intersections represented in abstract_path and store in full_path
         from_key, to_key = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
         mini_path = a_star(real_graph, from_key, [to_key])
         full_path.extend(mini_path.vertex_keys[:-1])
         idx += 1
 
-    path = Path(vertex_keys=full_path)
+    path = PlanningPath(vertex_keys=full_path)
     path.add_vertex(abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1])
     return path
