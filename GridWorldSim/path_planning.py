@@ -114,13 +114,16 @@ class PlanningPath():
         self.idx = 0
         self.obstacles = {}
 
-    def add_vertex(self, new_key, new_distance=1, new_cost=0, obstacle=None):
+    def add_vertex(self, new_key, new_distance=1, new_cost=0, obstacles=[]):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
         self.cost += new_cost
         self.total_cost = self.calculate_total()
         self.size += 1
-        self.obstacles[len(self.vertex_keys)-1] = obstacle
+        self.obstacles[(new_key, len(self.vertex_keys)-1)] = obstacles
+
+    def add_obstacle(self, key, pos, obstacle):
+        self.obstacles[(key, pos)].append(obstacle)
 
     def calculate_total(self):
         return self.cost + (0.01 * self.distance)
