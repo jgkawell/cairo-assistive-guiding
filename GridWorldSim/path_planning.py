@@ -2,6 +2,8 @@ import sys
 import numpy as np
 import heapq
 import copy
+import random
+from collections import OrderedDict
 
 class PriorityQueue:
     def __init__(self):
@@ -20,23 +22,20 @@ class Vertex():
     def __init__(self, key, world_size, cell_type = None):
         self.key = key
         self.cell_type = cell_type
-        self.value = 0
+        self.cost = 0
         self.neighbor_list = {}
         self.parent = -1
         self.dist = sys.maxsize #distance to start vertex 0
         self.visited = False
         self.xy = self.get_xy(world_size)
-        self.obstacle = None
 
-        if cell_type == "Reward":
-            self.value = 1
-        elif cell_type == "Hazard":
-            self.value = -0.25
+        if cell_type == "Hazard":
+            self.cost = 0.25
 
     # adds a neighbor to the vertex with a distance and value across the edge
     # direction: 1=N, 2=E, 3=S, 4=W
-    def add_neighbor(self, key, direction, distance=1, value=0):
-        self.neighbor_list[key] = (direction, distance, value)
+    def add_neighbor(self, key, direction, distance=1, cost=0):
+        self.neighbor_list[key] = (direction, distance, cost)
 
     def get_neighbors(self):
         return self.neighbor_list
@@ -106,30 +105,28 @@ class Graph():
         self.vertices[from_key].add_neighbor(to_key, direction, distance, value)
 
 class PlanningPath():
-    def __init__(self, vertex_keys=[], distance=0, value=0):
+    def __init__(self, vertex_keys=[], distance=0, cost=0):
         self.vertex_keys = vertex_keys
         self.distance = distance
-        self.value = value
-        self.total = self.calculate_total()
+        self.cost = cost
+        self.total_cost = self.calculate_total()
         self.size = len(self.vertex_keys)
         self.idx = 0
         self.obstacles = {}
 
-        # TODO: Change obstacle to list of obstacles or add to vertex object
-
-    def add_vertex(self, new_key, new_distance=1, new_value=0, obstacle=None):
+    def add_vertex(self, new_key, new_distance=1, new_cost=0, obstacle=None):
         self.vertex_keys.append(new_key)
         self.distance += new_distance
-        self.value += new_value
-        self.total = self.calculate_total()
+        self.cost += new_cost
+        self.total_cost = self.calculate_total()
         self.size += 1
-        self.obstacles[new_key] = obstacle
+        self.obstacles[len(self.vertex_keys)-1] = obstacle
 
     def calculate_total(self):
-        return self.value - (0.001 * self.distance)
+        return self.cost + (0.01 * self.distance)
 
     def __iter__(self):
-        return self
+        return self.vertex_keys
 
     def __next__(self):
         self.idx += 1
@@ -166,6 +163,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
     for key in goal_keys:
         goals.append(copy_graph.get_vertex(key))
 
+    closest_goal = None
 
     frontier = PriorityQueue()
     frontier.put(start, 0)
@@ -214,62 +212,80 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
                 neighbor.parent = current.key
 
     # reverse and convert to list
-    list_path = list(reversed(trace(closest_goal, copy_graph)))
-    path = PlanningPath(vertex_keys=[], distance=0, value=0)
-    for xy in list_path:
-        path.add_vertex(copy_graph.get_key(xy), new_distance=1, new_value=0)
+    path = PlanningPath(vertex_keys=[], distance=0, cost=0)
+    if closest_goal is not None:
+        list_path = list(reversed(trace(closest_goal, copy_graph)))
+        for xy in list_path:
+            key = copy_graph.get_key(xy)
+            path.add_vertex(key, new_distance=1, new_cost=copy_graph.get_vertex(key).cost)
 
     return path
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects
-def find_paths(graph, start_key, goal_keys, value_limit):
+def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
     # initialize paths and start vertex
     paths = []
     cur_path = PlanningPath([start_key])
     start_vertex = graph.get_vertex(start_key)
 
     # start recursion to build out solution path list
-    recurse_path_finding(graph, start_vertex, goal_keys, value_limit, cur_path, paths)
+    while len(paths) < num_paths:
+        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
+        if solved:
+            paths.append(new_path)
 
     return paths
 
-def recurse_path_finding(graph, cur_vertex, goal_keys, value_limit, cur_path, paths):
+def recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path):
     # pull out neighbors to iterate through
-    cur_neighbors = cur_vertex.get_neighbors()
+    cur_neighbors = copy.deepcopy(cur_vertex.get_neighbors())
 
     # iterate through neighbors recursively diving deeper into the paths
+    list_neighbors = list(cur_neighbors.items())
+    random.shuffle(list_neighbors)
+    cur_neighbors = OrderedDict(list_neighbors)
     for key, info in cur_neighbors.items():
-        # make sure not to recurse to previous states
-        if key not in cur_path.vertex_keys:
-            # make a copy of the path with the new vertex
-            new_vertex_list = []
-            for temp_key in cur_path.vertex_keys:
-                new_vertex_list.append(temp_key)
+        # make a copy of the path with the new vertex
+        new_vertex_list = []
+        for temp_key in cur_path.vertex_keys:
+            new_vertex_list.append(temp_key)
 
-            new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.value)
-            new_path.add_vertex(key, new_distance=info[1], new_value=info[2])
+        new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.cost)
+        new_path.add_vertex(key, new_distance=info[1], new_cost=info[2])
 
+        if new_path.total_cost < cost_limit:
             # found solution
             if key in goal_keys:
-                # if the total value is greater than limit, add to paths
-                if new_path.total > value_limit:
-                    paths.append(new_path)
+                return True, new_path
             else:
                 # pull out new vertex and pass it for the recursion
                 new_vertex = graph.get_vertex(key)
-                recurse_path_finding(graph, new_vertex, goal_keys, value_limit, new_path, paths)
+                solved, new_path = recurse_path_finding(graph, new_vertex, goal_keys, cost_limit, new_path)
+                if solved:
+                    return solved, new_path
+
+    return False, PlanningPath()
 
 def abstract_to_full_path(real_graph, abstract_path):
     full_path = []
+    distance = 0
+    cost = 0
     idx = 0
     while idx < len(abstract_path.vertex_keys)-1: #TODO: figure out bug: Path.size returns 1 more than number of vertex keys actually in the object 
         #do a_star on real graph for each set of adjacent intersections represented in abstract_path and store in full_path
         from_key, to_key = abstract_path.vertex_keys[idx], abstract_path.vertex_keys[idx+1]
         mini_path = a_star(real_graph, from_key, [to_key])
         full_path.extend(mini_path.vertex_keys[:-1])
+
+        final_key = mini_path.vertex_keys[-1]
+        final_vertex = real_graph.get_vertex(final_key)
+
+        distance += mini_path.distance - 1
+        cost += mini_path.cost - final_vertex.cost
         idx += 1
 
-    path = PlanningPath(vertex_keys=full_path)
-    path.add_vertex(abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1])
+    path = PlanningPath(vertex_keys=full_path, distance=distance, cost=cost)
+    key = abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1]
+    path.add_vertex(key, real_graph.get_vertex(key).cost)
     return path

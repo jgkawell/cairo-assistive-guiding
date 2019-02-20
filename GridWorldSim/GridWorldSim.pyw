@@ -486,7 +486,6 @@ class GridWorldSim(tk.Tk):
                 try:
                     temp = vertex_real.get_neighbors()[to_key]
                 except:
-                    print("Removed edge!")
                     edge_to_remove.append((from_key, to_key))
                     changed = True
                     if info[0] == direction:
@@ -494,6 +493,7 @@ class GridWorldSim(tk.Tk):
 
             # remove edges from human_graph
             for edge in edge_to_remove:
+                print("Removing edge in human graph:")
                 self.remove_edge(self.human_graph, edge[0], edge[1])
 
             return valid, changed

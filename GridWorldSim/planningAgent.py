@@ -7,6 +7,7 @@ except:
 
 # Setup imports
 from grobot import GRobot
+from random import randint
 from path_planning import Graph, PlanningPath
 from timeit import default_timer as timer
 import path_planning
@@ -20,7 +21,7 @@ class PlanningAgent():
 
     def __init__(self):
         # Initialise globals
-        self.robot = GRobot("PlanningAgent", posx=26, posy=22, colour="yellow")
+        self.robot = GRobot("PlanningAgent", colour="purple")
 
         # human agent variables
         self.human_graph = None
@@ -28,17 +29,34 @@ class PlanningAgent():
         self.human_name = "HumanAgent"
 
         # abstraction/optimization variables
-        self.value_limit = -sys.maxsize
+        self.cost_limit = -sys.maxsize
         self.goal_keys = []
         self.show_abstraction = False
         self.desired_path = PlanningPath()
         self.mitigation_path = PlanningPath()
+        self.mitigation_path_pos = 0
         self.cost_limit = 0.5
         self.heading = 90
+        self.num_paths = 10
 
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
         self.world_size = len(self.world)
+
+        # save empty states
+        self.empty_states = []
+        for i in range(0, self.world_size):
+            for j in range(0, self.world_size):
+                cell_type = self.world[i][j]
+                if cell_type == None:
+                    # save empy states for start generation
+                    self.empty_states.append((i,j))
+
+        # generate start state
+        start_x, start_y = 18, 21 #self.empty_states[randint(0, len(self.empty_states)-1)]
+
+        # recreate robot with
+        self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
     def run(self):
         print("Running...")
@@ -98,16 +116,19 @@ class PlanningAgent():
                 # simplify for certain level
                 print("Running on level: ", level)
                 new_size = self.simplifyWorld(old_size, level=level)
-                level += 1
+                # level += 1
 
                 # check to see if abstraction has changed sizes; if not, stop
-                if old_size == new_size:
-                    maxed = True
-                else:
-                    old_size = new_size
+                # if old_size == new_size:
+                #     maxed = True
+                # else:
+                #     old_size = new_size
 
                 # find best solution for the current abstraction level
                 # and save to self.desired_path and self.mitigation_path
+                self.desired_path = PlanningPath()
+                self.mitigation_path = PlanningPath()
+                self.mitigation_path_pos = 0
                 found_sol = self.findSolution(self.human_position)
 
                 end = timer()
@@ -122,54 +143,52 @@ class PlanningAgent():
             return True
 
     def findSolution(self, start_key):
-            # find all solution paths and rank them by total value
-            best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.value_limit)
-            best_paths.sort(key=lambda x: x.total, reverse=True)
-
             # generate the expected human path
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
 
-            # find paths with too low of a total value
-            remove_list = []
-            for path in best_paths:
-                if path.total < self.cost_limit:
-                    remove_list.append(path)
+            human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
 
-            # remove paths with too low of a total value
-            for path in remove_list:
-                best_paths.remove(path)
+            print("Human path cost: ", human_real_path.total_cost)
 
-            # print best paths info
-            print("Found paths: ", len(best_paths))
-            # for path in best_paths:
-            #     print("Robot: (Distance, Value, Total): ", (path.distance, path.value, round(path.total, 3)))
+            if human_real_path.total_cost >= self.cost_limit:
+                # find all solution paths and rank them by total value
+                best_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit-0.10, self.num_paths)
+                best_paths.sort(key=lambda x: x.total_cost, reverse=False)
 
-            # # print human path info
-            # print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.value, round(human_path.total, 3)))
+                # print best paths info
+                print("Found paths: ", len(best_paths))
+                for path in best_paths:
+                    print("Robot: (Distance, Value, Total): ", (path.distance, path.cost, round(path.total_cost, 3)))
 
-            # find the locations for obstacles for each path
-            obstacles_for_paths = {}
-            for path in best_paths:
-                # copy graph for recursion
-                copy_graph = copy.deepcopy(self.abstract_graph)
-                obstacles_for_paths[path] = []
-                self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
+                # print human path info
+                print("Human: (Distance, Value, Total): ", (human_path.distance, human_path.cost, round(human_path.total_cost, 3)))
 
-            # iterate through all the obstacle lists to find a solution (GREEDY)
-            found_sol = False
-            for path in obstacles_for_paths.keys(): #get desired path
-                obstacle_list = obstacles_for_paths[path]
-                #get real graph representation of path
-                path.vertex_keys = [self.human_position] + path.vertex_keys # add human's position to front of path
-                full_path = path_planning.abstract_to_full_path(self.real_graph, path)
-                found_sol = self.planMitigationPath(obstacle_list, start_key, full_path)
-                if found_sol:
-                    #get full desired path
-                    self.desired_path = copy.deepcopy(full_path)
-                    break
 
-            if not found_sol:
-                print("No solution...")
+                # find the locations for obstacles for each path
+                obstacles_for_paths = {}
+                for path in best_paths:
+                    # copy graph for recursion
+                    copy_graph = copy.deepcopy(self.abstract_graph)
+                    obstacles_for_paths[path] = []
+                    self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path)
+
+                # iterate through all the obstacle lists to find a solution (GREEDY)
+                found_sol = False
+                for path in obstacles_for_paths.keys(): #get desired path
+                    obstacle_list = obstacles_for_paths[path]
+                    #get real graph representation of path
+                    path.vertex_keys = [self.human_position] + path.vertex_keys # add human's position to front of path
+                    full_path = path_planning.abstract_to_full_path(self.real_graph, path)
+                    found_sol = self.planMitigationPath(obstacle_list, start_key, full_path)
+                    if found_sol:
+                        #get full desired path
+                        self.desired_path = copy.deepcopy(full_path)
+                        break
+
+                if not found_sol:
+                    print("No solution...")
+            else:
+                found_sol = True
 
             return found_sol
 
@@ -189,8 +208,14 @@ class PlanningAgent():
 
             # generate the expected human path after obstacle
             human_path_new = path_planning.a_star(copy_graph, key_from, self.goal_keys)
-            # recurse to find obtacles with this new human path
-            obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path_new)
+
+            # check for valid path
+            if len(human_path_new.vertex_keys) > 0:
+                # recurse to find obtacles with this new human path
+                obstacles_for_paths = self.findObstaclePlacements(copy_graph, obstacles_for_paths, path, human_path_new)
+            else:
+                del(obstacles_for_paths[path])
+                return obstacles_for_paths
         else:
             return obstacles_for_paths
 
@@ -221,39 +246,43 @@ class PlanningAgent():
         robot_position = self.real_graph.get_key((self.robot.posx, self.robot.posy))
 
         # iterate through all the obstacles in the list and find the mitigation paths
+        first = True
         for obstacle in obstacle_list:
             obstacle_key = obstacle[0]
+            
             robot_path_to_obstacle = path_planning.a_star(self.real_graph, robot_position, [obstacle_key])
             human_path_to_obstacle = path_planning.a_star(self.human_graph, human_position, [obstacle_key])
 
-            # check to see if the robot can get their before the human
-            if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
-                keys = []
-                for obstacle in obstacle_list:
-                    keys.append((self.real_graph.get_vertex(obstacle[0]).get_xy(self.world_size), (self.real_graph.get_vertex(obstacle[1]).get_xy(self.world_size))))
-                print("FOUND A SOLUTION! ", keys)
-                found_sol = True
-            else:
-                break #if human closer to first obstacle in list, this plan isn't feasible
+            # check to see if the robot can get their before the human on the first object
+            if first:
+                if robot_path_to_obstacle.distance < human_path_to_obstacle.distance:
+                    first = False
+                    keys = []
+                    for print_obstacle in obstacle_list:
+                        keys.append((self.real_graph.get_vertex(print_obstacle[0]).get_xy(self.world_size), (self.real_graph.get_vertex(print_obstacle[1]).get_xy(self.world_size))))
+                    print("FOUND A SOLUTION! ", keys)
+                    found_sol = True
+                else:
+                    break #if human closer to first obstacle in list, this plan isn't feasible
 
             if found_sol:
-                robot_position = obstacle[0]
                 for key in robot_path_to_obstacle.vertex_keys:
-                    # encode obstacle into vertex that needs obstacle placement
-                    if key == obstacle[0]:
-                        self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=obstacle)
-                    else:
-                        self.mitigation_path.add_vertex(key, new_distance=1, new_value=0, obstacle=None)
+                    if key != robot_position:
+                        # encode obstacle into vertex that needs obstacle placement
+                        if key == obstacle_key:
+                            self.mitigation_path.add_vertex(key, new_distance=1, new_cost=0, obstacle=obstacle)
+                        else:
+                            self.mitigation_path.add_vertex(key, new_distance=1, new_cost=0, obstacle=None)
 
-            if found_sol:
-                break
+                # reset the robot position
+                robot_position = obstacle_key
 
         return found_sol
 
     def move(self):
-        if len(self.mitigation_path.vertex_keys) > 1:
+        if len(self.mitigation_path.vertex_keys) > 0:
             # pull out vertex info (skip first location)
-            vtx_key = self.mitigation_path.vertex_keys[1]
+            vtx_key = self.mitigation_path.vertex_keys[self.mitigation_path_pos]
             
             # check sim to find allowance to move
             can_move = self.robot.can_robot_move()
@@ -263,10 +292,9 @@ class PlanningAgent():
             else:
                 # move and remove that vertex fromn path
                 self.move_helper(self.real_graph.get_vertex(vtx_key))
-                self.mitigation_path.vertex_keys.remove(vtx_key)
 
                 # try to place obstacle
-                new_obstacle = self.mitigation_path.obstacles[vtx_key]
+                new_obstacle = self.mitigation_path.obstacles[self.mitigation_path_pos]
                 if new_obstacle != None:
                     print("Placing obstacle...")
                     self.removeEdgeFromRealGraph(key_a=new_obstacle[0], key_b=new_obstacle[1])
@@ -274,6 +302,7 @@ class PlanningAgent():
                 # allow human to move
                 time.sleep(1)
                 self.robot.set_can_human_move(True)
+                self.mitigation_path_pos += 1
 
 
     def move_helper(self, vertex):
@@ -526,7 +555,7 @@ class PlanningAgent():
             # iterate through real neighbors to build edges with direction, distance, and valuation
             for neighbor_key, neighbor_info in real_neighbors.items():
                 # find info for new edge
-                new_key, new_distance, new_value = self.findEdgeInfo(cur_key, neighbor_key, distance=0, value=0)
+                new_key, new_distance, new_cost = self.findEdgeInfo(cur_key, neighbor_key, distance=0, cost=0)
 
                 # make sure the key is valid
                 if new_key != -1:
@@ -534,11 +563,11 @@ class PlanningAgent():
                     direction = neighbor_info[0]
 
                     # add the edge to the abstract graph
-                    self.abstract_graph.add_edge(cur_key, new_key, direction, new_distance, new_value)
+                    self.abstract_graph.add_edge(cur_key, new_key, direction, new_distance, new_cost)
 
     # recurses through path from vertex with key_a to max depth or another already defined vertex (whichever comes first)
     # returns a tuple = (key, distance, value) that represents the edge
-    def findEdgeInfo(self, key_a, key_b, distance, value):
+    def findEdgeInfo(self, key_a, key_b, distance, cost):
         # pull out current vertex
         cur_vertex = self.real_graph.get_vertex(key_b)
 
@@ -546,8 +575,8 @@ class PlanningAgent():
             # if the key is already a vertex, return the vertex or the max depth has been reached
             # with the distance and value up to that point in the recursion
             distance += 1
-            value += cur_vertex.value
-            return (key_b, distance, value)
+            cost += cur_vertex.cost
+            return (key_b, distance, cost)
         else:
             # else keep recursing until either a vertex or deadend is found
             neighbors = cur_vertex.get_neighbors()
@@ -556,8 +585,8 @@ class PlanningAgent():
                     # make sure not to recurse back the way we came (a -> b -> c)
                     if key_c != key_a:
                         distance += 1
-                        value += cur_vertex.value
-                        return self.findEdgeInfo(key_b, key_c, distance, value)
+                        cost += cur_vertex.cost
+                        return self.findEdgeInfo(key_b, key_c, distance, cost)
             else:
                 # return a bad key to signal deadend
                 return (-1, 0, 0)

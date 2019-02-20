@@ -78,7 +78,7 @@ class HumanAgent():
         self.sendGraph()
 
         # generate start state
-        start_x, start_y = 19, 22 #self.empty_states[randint(0, len(self.empty_states)-1)]
+        start_x, start_y = 18, 18 #self.empty_states[randint(0, len(self.empty_states)-1)]
 
         # build start info
         xy = (start_x, start_y)
