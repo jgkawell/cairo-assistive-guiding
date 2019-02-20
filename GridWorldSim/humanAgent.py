@@ -93,6 +93,7 @@ class HumanAgent():
             print("Goal: " + str(xy))
 
         # recreate robot with
+
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         #path plan with A*
@@ -101,17 +102,18 @@ class HumanAgent():
     def move(self):
         i = 1
         cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+        can_move = False
+        self.robot.set_can_robot_move(True)
         while cur_key not in self.goals:
 
             # check sim to find allowance to move
-            can_move = False
-            #human and planner take turns moving
-            self.robot.set_can_robot_move(True)
             while not can_move:
                 can_move = self.robot.can_human_move()
                 if not can_move:
-                    print("Human waiting to move...")
-                    time.sleep(1)
+                    print("Waiting...", end='\r')
+                    time.sleep(0.01)
+                    
+            # check current world state
             valid, changed = self.robot.look()
 
             # found new world knowledge
@@ -125,6 +127,7 @@ class HumanAgent():
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_key(xy)
                 self.path = a_star(self.real_graph, start, self.goals)
+                print("New path: ", self.path.vertex_keys)
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
@@ -134,6 +137,10 @@ class HumanAgent():
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+
+                #human and planner take turns moving
+                self.robot.set_can_robot_move(True)
+                can_move = False
 
                 # reset position and find new path
                 i = 0
@@ -147,6 +154,10 @@ class HumanAgent():
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+
+                #human and planner take turns moving
+                self.robot.set_can_robot_move(True)
+                can_move = False
 
                 i += 1
 

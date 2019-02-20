@@ -465,36 +465,40 @@ class GridWorldSim(tk.Tk):
             # convert heading to direction
             direction = -1
             if heading == 90:
-                direction == 1
+                direction = 1
             elif heading == 0:
-                direction == 2
+                direction = 2
             elif heading == 270:
-                direction == 3
+                direction = 3
             elif heading == 180:
                 direction = 4
 
             # pull out values for edge check
             from_key = self.real_graph.get_key((posx, posy))
-            vertex_real = self.real_graph.get_vertex(from_key)
-            vertex_human = self.human_graph.get_vertex(from_key)
+            real_neighbors = self.real_graph.get_vertex(from_key).get_neighbors()
+            human_neighbors = self.human_graph.get_vertex(from_key).get_neighbors()
 
-            # find edges to remove from human_graph
-            valid = True
+            # check if valid move
+            valid = False
+            for info in real_neighbors.values():
+                if info[0] == direction:
+                    valid = True
+
+            # find and remove edges from human_graph
             changed = False
-            edge_to_remove = []
-            for to_key, info in vertex_human.get_neighbors().items():
-                try:
-                    temp = vertex_real.get_neighbors()[to_key]
-                except:
-                    edge_to_remove.append((from_key, to_key))
-                    changed = True
-                    if info[0] == direction:
-                        valid = False
-
-            # remove edges from human_graph
-            for edge in edge_to_remove:
-                print("Removing edge in human graph:")
-                self.remove_edge(self.human_graph, edge[0], edge[1])
+            if rob_name == "HumanAgent":
+                edge_to_remove = []
+                for to_key in human_neighbors.keys():
+                    try:
+                        temp = real_neighbors[to_key]
+                    except:
+                        edge_to_remove.append((from_key, to_key))
+                        changed = True
+                        
+                # remove edges from human_graph
+                for edge in edge_to_remove:
+                    print("Removing edge in human graph:")
+                    self.remove_edge(self.human_graph, edge[0], edge[1])
 
             return valid, changed
 
@@ -616,6 +620,7 @@ class GridWorldSim(tk.Tk):
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "remove_edge":
                     # removes an edge from real_graph
+                    print("Removing edge in real graph:")
                     key_a = msg[2]
                     key_b = msg[3]
                     rmsg = self.remove_edge(self.real_graph, int(key_a), int(key_b))

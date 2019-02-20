@@ -125,6 +125,9 @@ class PlanningPath():
     def calculate_total(self):
         return self.cost + (0.01 * self.distance)
 
+    def __eq__(self, other):
+        return self.vertex_keys == other.vertex_keys
+
     def __iter__(self):
         return self.vertex_keys
 
@@ -156,7 +159,7 @@ def trace(vertex, graph):
 
 def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
     copy_graph = copy.deepcopy(graph)
-    # converte keys to vertices
+    # convert keys to vertices
     start = copy_graph.get_vertex(start_key)
     start.parent = -1
     goals = []
@@ -226,13 +229,13 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
     # initialize paths and start vertex
     paths = []
-    cur_path = PlanningPath([start_key])
     start_vertex = graph.get_vertex(start_key)
 
     # start recursion to build out solution path list
     while len(paths) < num_paths:
+        cur_path = PlanningPath([start_key])
         solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
-        if solved:
+        if solved and new_path not in paths:
             paths.append(new_path)
 
     return paths
@@ -286,6 +289,6 @@ def abstract_to_full_path(real_graph, abstract_path):
         idx += 1
 
     path = PlanningPath(vertex_keys=full_path, distance=distance, cost=cost)
-    key = abstract_path.vertex_keys[len(abstract_path.vertex_keys)-1]
+    key = abstract_path.vertex_keys[-1]
     path.add_vertex(key, real_graph.get_vertex(key).cost)
     return path
