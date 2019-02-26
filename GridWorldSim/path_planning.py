@@ -3,6 +3,7 @@ import numpy as np
 import heapq
 import copy
 import random
+import multiprocessing
 from collections import OrderedDict
 
 class PriorityQueue:
@@ -234,14 +235,37 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
     paths = []
     start_vertex = graph.get_vertex(start_key)
 
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+
+    print("Built manager...")
+
     # start recursion to build out solution path list
     while len(paths) < num_paths:
-        cur_path = PlanningPath([start_key])
-        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
-        if solved and new_path not in paths:
-            paths.append(new_path)
+        
+        jobs = []        
+        for i in range(num_paths):
+            print("Running job: ", i+1)
+            cur_path = PlanningPath([start_key])
+            p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, cost_limit, cur_path))
+            jobs.append(p)
+            p.start()
+        
+        for p in jobs:
+            p.join()
+
+        for solved, new_path in return_dict.values():
+            print(solved)
+            if solved and new_path not in paths:
+                paths.append(new_path)
+                if len(paths) == num_paths:
+                    break
+                    
 
     return paths
+
+def dummy(p_num, return_dict, graph, cur_vertex, goal_keys, cost_limit, cur_path):
+    return_dict[p_num] = recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path)
 
 def recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path):
     # pull out neighbors to iterate through
