@@ -58,7 +58,8 @@ class PlanningAgent():
                     self.empty_states.append((i,j))
 
         # generate start state
-        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        start_x, start_y = 15, 22
 
         # recreate robot with
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
@@ -69,6 +70,7 @@ class PlanningAgent():
         # set up the real true graph world
         self.real_graph = Graph()
         self.real_graph.setup_graph(self.world, self.world_size)
+
 
         # get reward keys
         for vertex in self.real_graph:
@@ -212,7 +214,8 @@ class PlanningAgent():
 
         # iterate along path and generate needed obstacles based off of weighted cost
         for i in range(len_path):
-
+            len_human = len(human_path.vertex_keys)
+            #print("DESIRED VS HUMAN PATH: ", len_path, len_human)
             # set the current key
             cur_key = desired_path.vertex_keys[i]
 
@@ -232,15 +235,19 @@ class PlanningAgent():
                 costs = {}
                 cur_neighbors = copy_graph.get_vertex(cur_key).get_neighbors().keys()
                 for neighbor in cur_neighbors:
+
                     # make sure not to create obstacles forward along the desired path
                     if neighbor != next_key:
                         # get possible human path
                         possible_human_path = self.getHumanPathByDirection(copy_graph, cur_key, next_key, cur_neighbors)
-                        
-                        if neighbor == predicted_key: # predicted path
-                            costs[neighbor] = (self.human_optimality_prob) * possible_human_path.total_cost
-                        else: # unpredicted path
-                            costs[neighbor] = (1 - self.human_optimality_prob) * possible_human_path.total_cost
+                        #human_path is sometimes empty list
+                        if len(possible_human_path.vertex_keys) > 0:
+                            full_possible_human_path = path_planning.abstract_to_full_path(self.real_graph, possible_human_path)
+
+                            if neighbor == predicted_key:  # predicted path
+                                costs[neighbor] = (self.human_optimality_prob) * full_possible_human_path.total_cost
+                            else:  # unpredicted path
+                                costs[neighbor] = (1 - self.human_optimality_prob) * full_possible_human_path.total_cost
 
                 for key, cost in costs.items():
                     if cost > self.cost_limit:
@@ -395,6 +402,7 @@ class PlanningAgent():
     def will_block_human(self, cur_key, next_key):
         # request the current human position from the sim and pull out the index
         self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+        print(self.desired_path.vertex_keys)
         human_pos = self.desired_path.vertex_keys.index(self.human_position)
 
         # attempt to get the index of the obstacle

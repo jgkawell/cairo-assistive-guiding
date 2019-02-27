@@ -68,7 +68,7 @@ class GridWorldSim(tk.Tk):
         self.frmht = 622
         self.frmwt = 622
         self.gridspace = 20
-        self.robots = {}  # Mutiple named robots
+        self.robots = {}  # Mutiple named robots 
         self.shp = []  # Robot shapes list
         self.trails = False  # Trails off to start with
         tk.Tk.__init__(self, master)

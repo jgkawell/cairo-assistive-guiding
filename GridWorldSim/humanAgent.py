@@ -35,6 +35,7 @@ class HumanAgent():
         self.optimality_constant = 0.2
         self.reward_removal_constant = 0.5
         self.real_graph = None
+        self.damage_taken = 0
 
         # get file name from simulator
         file_name = self.robot.get_cur_file()
@@ -78,8 +79,8 @@ class HumanAgent():
         self.sendGraph()
 
         # generate start state
-        start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-
+        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        start_x, start_y = 20, 22
         # build start info
         xy = (start_x, start_y)
         start = self.real_graph.get_key(xy)
@@ -137,6 +138,8 @@ class HumanAgent():
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+                #accumulate damage
+                self.damage_taken += self.real_graph.get_vertex(cur_key).cost
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
@@ -154,6 +157,8 @@ class HumanAgent():
                 # move and reset cur_key
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+                #accumulate damage
+                self.damage_taken += self.real_graph.get_vertex(cur_key).cost
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
