@@ -36,6 +36,7 @@ class HumanAgent():
         self.reward_removal_constant = 0.5
         self.real_graph = None
         self.damage_taken = 0
+        self.start_distance = 20 #start 20 cells away from randomly chosen goal
 
         # get file name from simulator
         file_name = self.robot.get_cur_file()
@@ -78,14 +79,6 @@ class HumanAgent():
         self.real_graph.setup_graph(self.world, self.world_size)
         self.sendGraph()
 
-        # generate start state
-        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        start_x, start_y = 20, 22
-        # build start info
-        xy = (start_x, start_y)
-        start = self.real_graph.get_key(xy)
-        print("Start: " + str(xy))
-
         # build goal info
         self.goals = []
         for xy in self.reward_states:
@@ -93,9 +86,26 @@ class HumanAgent():
             self.goals.append(goal)
             print("Goal: " + str(xy))
 
-        # recreate robot with
-
+        # recreate robot with distance self.start_distance away from randomly chosen goal
+        rand_goal = self.goals[randint(0, len(self.goals)-1)]
+        goal_x, goal_y = self.real_graph.get_vertex(rand_goal).get_xy(self.world_size)
+        start_x, start_y = 0, 0
+        while (start_x, start_y) not in self.empty_states:
+            rand_x = randint(0, self.start_distance)
+            rand_y = self.start_distance - rand_x
+            start_x = abs(goal_x - rand_x)
+            start_y = abs(goal_y - rand_y)
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
+
+        # generate start state
+        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
+        #start_x, start_y = 20, 22
+        # build start info
+        xy = (start_x, start_y)
+        start = self.real_graph.get_key(xy)
+        print("Start: " + str(xy))
+
+
 
         #path plan with A*
         self.path = a_star(self.real_graph, start, self.goals)

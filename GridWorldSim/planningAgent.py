@@ -43,6 +43,7 @@ class PlanningAgent():
         self.num_samples = 10
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
+        self.start_dist_from_robot = 10
         
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
@@ -59,9 +60,16 @@ class PlanningAgent():
 
         # generate start state
         #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        start_x, start_y = 15, 22
+        #start_x, start_y = 15, 22
 
         # recreate robot with
+        human_x, human_y = self.robot.get_xy_pos(self.human_name)
+        start_x, start_y = 0, 0
+        while (start_x, start_y) not in self.empty_states:
+            rand_x = randint(0, self.start_dist_from_robot)
+            rand_y = self.start_dist_from_robot - rand_x
+            start_x = abs(human_x - rand_x)
+            start_y = abs(human_y - rand_y)
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
     def run(self):
