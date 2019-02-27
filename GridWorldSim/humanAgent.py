@@ -117,13 +117,15 @@ class HumanAgent():
         can_move = False
         self.robot.set_can_robot_move(True)
         while cur_key not in self.goals:
-
+            # pause before moving
+            time.sleep(1)
+            
             # check sim to find allowance to move
             while not can_move:
                 can_move = self.robot.can_human_move()
                 if not can_move:
                     print("Waiting...", end='\r')
-                    time.sleep(0.01)
+                    time.sleep(1)
                     
             # check current world state
             valid, changed = self.robot.look()
