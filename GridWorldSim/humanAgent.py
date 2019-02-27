@@ -72,6 +72,7 @@ class HumanAgent():
     def run(self):
         self.plan()
         self.move()
+        return self.damage_taken
 
     def plan(self):
         # generate graph world

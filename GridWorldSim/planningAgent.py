@@ -19,7 +19,7 @@ import sys
 
 class PlanningAgent():
 
-    def __init__(self):
+    def __init__(self, abstract=True, probabilistic=False):
         # Initialise globals
         self.robot = GRobot("PlanningAgent", colour="purple")
 
@@ -36,6 +36,7 @@ class PlanningAgent():
         self.mitigation_path = PlanningPath()
         self.mitigation_path_pos = 0
         self.heading = 90
+        self.max_level = 5 #Equivalent to no abstraction
 
         # adjustable parameters
         self.cost_limit = 0.5
@@ -44,6 +45,12 @@ class PlanningAgent():
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
         self.start_dist_from_robot = 10
+
+        #use for experiments
+        self.abstract = abstract
+        self.probabilistic = probabilistic
+        self.self_probabilistic = self.probabilistic
+        self.probabilistic_model = self.self_probabilistic
         
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
@@ -106,6 +113,9 @@ class PlanningAgent():
 
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+        return self.abstract
+
+
 
     # gets the human_graph from the sim
     def getHumanGraph(self):
@@ -131,7 +141,8 @@ class PlanningAgent():
 
                 # simplify for certain level
                 print("Running on level: ", level)
-                new_size = self.simplifyWorld(old_size, level=level)
+                #TODO: Doesn't work if we don't use abstraction. Fix abstract_graph code to be the full graph if self.abstract is False
+                new_size = self.simplifyWorld(old_size, level=self.max_level if not self.abstract else level)
                 level += 1
 
                 # check to see if abstraction has changed sizes; if not, stop
@@ -560,6 +571,7 @@ class PlanningAgent():
     # creates the abstract representaion of the world
     # self.real_graph -> self.abstract_graph
     def simplifyWorld(self, world_size, level):
+        print("LEVEL ", level)
         # first level that just pulls out intersections
         if level == 0:
             # initialize empty graph
