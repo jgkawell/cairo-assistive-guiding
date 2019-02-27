@@ -105,14 +105,14 @@ class Graph():
         self.vertices[from_key].add_neighbor(to_key, direction, distance, value)
 
 class PlanningPath():
-    def __init__(self, vertex_keys=[], distance=0, cost=0):
+    def __init__(self, vertex_keys=[], distance=0, cost=0, obstacles={}):
         self.vertex_keys = vertex_keys
         self.distance = distance
         self.cost = cost
         self.total_cost = self.calculate_total()
         self.size = len(self.vertex_keys)
         self.idx = 0
-        self.obstacles = {}
+        self.obstacles = obstacles
 
     def add_vertex(self, new_key, new_distance=1, new_cost=0, obstacles=[]):
         self.vertex_keys.append(new_key)
@@ -234,32 +234,12 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
     paths = []
     start_vertex = graph.get_vertex(start_key)
 
-    manager = multiprocessing.Manager()
-    return_dict = manager.dict()
-
-    print("Built manager...")
-
     # start recursion to build out solution path list
     while len(paths) < num_paths:
-        
-        jobs = []        
-        for i in range(num_paths):
-            print("Running job: ", i+1)
-            cur_path = PlanningPath([start_key])
-            p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, cost_limit, cur_path))
-            jobs.append(p)
-            p.start()
-        
-        for p in jobs:
-            p.join()
-
-        for solved, new_path in return_dict.values():
-            print(solved)
-            if solved and new_path not in paths:
-                paths.append(new_path)
-                if len(paths) == num_paths:
-                    break
-                    
+        cur_path = PlanningPath([start_key])
+        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
+        if solved and new_path not in paths:
+            paths.append(new_path)
 
     return paths
 

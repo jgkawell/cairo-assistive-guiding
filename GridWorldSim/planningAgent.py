@@ -151,8 +151,9 @@ class PlanningAgent():
 
                 # find best solution for the current abstraction level
                 # and save to self.desired_path and self.mitigation_path
-                self.desired_path = PlanningPath()
-                self.mitigation_path = PlanningPath()
+                self.desired_path = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
+                self.mitigation_path = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
+                print(self.desired_path.vertex_keys, self.mitigation_path.vertex_keys)
                 self.mitigation_path_pos = 0
                 found_sol = self.findSolution(self.human_position)
 
@@ -239,7 +240,11 @@ class PlanningAgent():
             # set the next keys
             if i < len_path-1:
                 next_key = desired_path.vertex_keys[i+1]
-                predicted_key = human_path.vertex_keys[i+1]
+                try:
+                    predicted_key = human_path.vertex_keys[i+1]
+                except:
+                    obstacle_list = []
+                    break
             else:
                 next_key = -1
                 predicted_key = -1
@@ -262,12 +267,12 @@ class PlanningAgent():
                             full_possible_human_path = path_planning.abstract_to_full_path(self.real_graph, possible_human_path)
 
                             if neighbor == predicted_key:  # predicted path
-                                costs[neighbor] = (self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = 1 #(self.human_optimality_prob) * full_possible_human_path.total_cost
                             else:  # unpredicted path
-                                costs[neighbor] = (1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = 0 #(1 - self.human_optimality_prob) * full_possible_human_path.total_cost
 
                 for key, cost in costs.items():
-                    if cost > self.cost_limit:
+                    if cost > 0.25: #self.cost_limit:
                         new_obstacles.append(key)
                         self.removeEdgeFromGivenGraph(copy_graph, cur_key, key)
                         repeat = True
@@ -401,11 +406,16 @@ class PlanningAgent():
                             if new_obstacle != None:
                                 cur_key = new_obstacle[0]
                                 for next_key in new_obstacle[1]:
-                                    while self.will_block_human(cur_key, next_key):
-                                        # wait
-                                        print("Waiting...")
-                                        self.robot.set_can_human_move(True)
-                                        time.sleep(0.25)
+                                    wait = True
+                                    while wait:
+                                        wait = self.will_block_human(cur_key, next_key)
+                                        if wait == -1:
+                                            return
+                                        elif wait:
+                                            print("Waiting...")
+                                            self.robot.set_can_human_move(True)
+                                            time.sleep(0.25)
+                                        
                                 
                                     print("Placing obstacle...")
                                     self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
@@ -419,8 +429,12 @@ class PlanningAgent():
     def will_block_human(self, cur_key, next_key):
         # request the current human position from the sim and pull out the index
         self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
-        print(self.desired_path.vertex_keys)
-        human_pos = self.desired_path.vertex_keys.index(self.human_position)
+
+        try:
+            human_pos = self.desired_path.vertex_keys.index(self.human_position)
+        except:
+            print("Human off of desired path...")
+            return -1
 
         # attempt to get the index of the obstacle
         obstacle_pos = -1
