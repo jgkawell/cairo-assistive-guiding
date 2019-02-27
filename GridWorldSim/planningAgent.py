@@ -49,8 +49,6 @@ class PlanningAgent():
         #use for experiments
         self.abstract = abstract
         self.probabilistic = probabilistic
-        self.self_probabilistic = self.probabilistic
-        self.probabilistic_model = self.self_probabilistic
         
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
