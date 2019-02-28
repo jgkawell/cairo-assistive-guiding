@@ -31,6 +31,8 @@ class Vertex():
 
         if cell_type == "Hazard":
             self.cost = 0.25
+        else:
+            self.cost = 0.01
 
     # adds a neighbor to the vertex with a distance and value across the edge
     # direction: 1=N, 2=E, 3=S, 4=W

@@ -48,7 +48,7 @@ class PlanningAgent():
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
         self.start_distance = 10
-        self.time_limit = 10
+        self.time_limit = 15
 
         # use for experiments
         self.abstract = abstract
@@ -125,11 +125,10 @@ class PlanningAgent():
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.get_cur_human_graph())
 
-    def elapseTime(self, p_num, return_dict, elapsed):
+    def elapseTime(self, p_num, return_dict):
         start_time = timer()
-        while (timer() - start_time < 10):
-            elapsed = False
-        elapsed = True
+        while (timer() - start_time < self.time_limit):
+            pass
         print("Exiting elapseTime...")
         return_dict[p_num] = timer() - start_time
 
@@ -147,14 +146,13 @@ class PlanningAgent():
 
             manager = mp.Manager()
             return_dict = manager.dict()
-            elapsed = False
             jobs = []
-            p = mp.Process(target=self.elapseTime, args=(0, return_dict, elapsed))
+            p = mp.Process(target=self.elapseTime, args=(0, return_dict))
             jobs.append(p)
-            p.start()
+            #p.start()
 
             # loop plan until a solution is found or the abstraction is maxed
-            while not found_sol and not maxed and not elapsed:
+            while not found_sol and not maxed:
 
 
                 start = timer()
@@ -182,6 +180,9 @@ class PlanningAgent():
                 end = timer()
                 total = end - start
                 print("ROBOT:  Took: ", total)
+                # reset timer
+                if p.is_alive(): p.terminate()
+                if len(return_dict) > 0: return_dict.clear()
             return found_sol
         else:
             return True

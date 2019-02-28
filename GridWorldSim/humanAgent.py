@@ -35,6 +35,7 @@ class HumanAgent():
         self.optimality_constant = 0.2
         self.reward_removal_constant = 0.5
         self.real_graph = None
+        self.damage_tracking_graph = None
         self.damage_taken = 0
         self.start_distance = 10 #start 20 cells away from randomly chosen goal
         self.planner = planner #if no planner, don't wait to move
@@ -45,9 +46,14 @@ class HumanAgent():
         self.world = pickle.load(open(file_name, 'rb'))
         self.world_size = len(self.world)
 
+        #To keep track of dmg human accumulates
+        self.damage_tracking_graph = Graph()
+        self.damage_tracking_graph.setup_graph(self.world, self.world_size)
+
         # Erase hazards and (some) rewards from memory
         self.reward_states = []
         self.empty_states = []
+
         for i in range(0, self.world_size):
             for j in range(0, self.world_size):
                 cell_type = self.world[i][j]
@@ -65,6 +71,7 @@ class HumanAgent():
                     # save empy states for start generation
                     self.empty_states.append((i,j))
 
+
     def sendGraph(self):
         serialized_graph = pickle.dumps(copy.deepcopy(self.real_graph), protocol=2)
         self.robot._send(serialized_graph, "byte")
@@ -72,6 +79,7 @@ class HumanAgent():
     def run(self):
         self.plan()
         self.move()
+        return self.damage_taken
 
     def plan(self):
         # generate graph world
@@ -151,7 +159,8 @@ class HumanAgent():
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
-                self.damage_taken += self.real_graph.get_vertex(cur_key).cost
+                print("INFLICT ", self.damage_tracking_graph.get_vertex(cur_key).cost)
+                self.damage_taken += self.damage_tracking_graph.get_vertex(cur_key).cost
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
@@ -170,7 +179,8 @@ class HumanAgent():
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
-                self.damage_taken += self.real_graph.get_vertex(cur_key).cost
+                print("INFLICT ", self.damage_tracking_graph.get_vertex(cur_key).cost)
+                self.damage_taken += self.damage_tracking_graph.get_vertex(cur_key).cost
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)

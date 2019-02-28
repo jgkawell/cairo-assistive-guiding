@@ -26,4 +26,5 @@ class HumanSim():
 
 if __name__ == '__main__':
     sim = HumanSim()
-    sim.run()
+    damage = sim.run()
+    print("Damage: ", damage)
