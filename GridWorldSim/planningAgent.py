@@ -42,11 +42,12 @@ class PlanningAgent():
 
         # adjustable parameters
         self.cost_limit = 0.5
-        self.sampling_limit = 10
-        self.num_samples = 10
+        self.num_samples = 3
+        self.sample_size = 10
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
         self.start_distance = 10
+        self.time_limit = 10
 
         # use for experiments
         self.abstract = abstract
@@ -178,11 +179,11 @@ class PlanningAgent():
             if human_real_path.total_cost >= self.cost_limit:
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False
-                for sample_num in range(self.sampling_limit):
+                for sample_num in range(self.num_samples):
                     print("ROBOT:  Sample number: ", sample_num+1, end="\r")
                 
                     # find a sampling of paths that fits constraints (cost_limit)
-                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.num_samples)
+                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.sample_size)
                     for sample_path in sample_paths:
                         if sample_path not in self.previous_paths:
                             self.previous_paths.append(sample_path)
@@ -267,9 +268,9 @@ class PlanningAgent():
                             full_possible_human_path = path_planning.abstract_to_full_path(self.real_graph, possible_human_path)
 
                             if neighbor == predicted_key:  # predicted path
-                                costs[neighbor] = 1 #(self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = (self.human_optimality_prob) * full_possible_human_path.total_cost
                             else:  # unpredicted path
-                                costs[neighbor] = 0 #(1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = (1 - self.human_optimality_prob) * full_possible_human_path.total_cost
 
                 for key, cost in costs.items():
                     if cost > 0.25: #self.cost_limit:
