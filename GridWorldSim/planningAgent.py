@@ -125,12 +125,12 @@ class PlanningAgent():
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.get_cur_human_graph())
 
-    def elapseTime(self, p_num, return_dict):
+    def elapseTime(self, p_num, timer_dict):
         start_time = timer()
         while (timer() - start_time < self.time_limit):
             pass
         print("Exiting elapseTime...")
-        return_dict[p_num] = timer() - start_time
+        timer_dict[p_num] = timer() - start_time
 
     # plan a path to execute
     def plan(self):
