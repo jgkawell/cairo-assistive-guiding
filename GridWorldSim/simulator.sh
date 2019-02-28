@@ -1,2 +1,6 @@
 #!/bin/bash
-python3 humanSim.py | python3 robotSim.py
+./GridWorldSim.pyw &
+sleep 3
+python3 humanSim.py &
+sleep 3
+python3 robotSim.py

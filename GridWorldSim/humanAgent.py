@@ -25,7 +25,7 @@ import sys
 
 class HumanAgent():
 
-    def __init__(self, knowledge=1, optimal=True, planner=False):
+    def __init__(self, knowledge=1, optimal=True, planner=True):
         # Initialise globals
         self.robot = GRobot("HumanAgent", colour="blue")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
@@ -101,7 +101,7 @@ class HumanAgent():
                 start_x, start_y = x1, y1
 
         # recreate human agent with start positions
-        start_x, start_y = 4, 3
+        start_x, start_y = 18, 18
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         # build start info
