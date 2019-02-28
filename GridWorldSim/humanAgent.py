@@ -101,7 +101,7 @@ class HumanAgent():
                 start_x, start_y = x1, y1
 
         # recreate human agent with start positions
-        start_x, start_y = 18, 18
+        start_x, start_y = 18, 14
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         # build start info

@@ -16,6 +16,7 @@ import time
 import copy
 import sys
 import numpy as np
+import multiprocessing as mp
 
 
 class PlanningAgent():
@@ -124,6 +125,14 @@ class PlanningAgent():
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.get_cur_human_graph())
 
+    def elapseTime(self, p_num, return_dict, elapsed):
+        start_time = timer()
+        while (timer() - start_time < 10):
+            elapsed = False
+        elapsed = True
+        print("Exiting elapseTime...")
+        return_dict[p_num] = timer() - start_time
+
     # plan a path to execute
     def plan(self):
         # if the human has diverged from the desired path, replan
@@ -136,8 +145,17 @@ class PlanningAgent():
             old_size = 0
             self.previous_paths = []
 
+            manager = mp.Manager()
+            return_dict = manager.dict()
+            elapsed = False
+            jobs = []
+            p = mp.Process(target=self.elapseTime, args=(0, return_dict, elapsed))
+            jobs.append(p)
+            p.start()
+
             # loop plan until a solution is found or the abstraction is maxed
-            while not found_sol and not maxed:
+            while not found_sol and not maxed and not elapsed:
+
 
                 start = timer()
 
@@ -159,17 +177,16 @@ class PlanningAgent():
                 self.mitigation_path = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
                 self.desired_path_abstract = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
                 self.mitigation_path_pos = 0
-                found_sol = self.findSolution(self.human_position)
+                found_sol = self.findSolution(self.human_position, return_dict)
 
                 end = timer()
                 total = end - start
                 print("ROBOT:  Took: ", total)
-
             return found_sol
         else:
             return True
 
-    def findSolution(self, start_key):
+    def findSolution(self, start_key, return_dict):
             # generate the expected human path
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
@@ -193,6 +210,9 @@ class PlanningAgent():
                     sample_paths.sort(key=lambda x: x.total_cost, reverse=False)
 
                     for sample_path in sample_paths:
+                        if len(return_dict) != 0:
+                            print("Time's up, took: ", return_dict[0])
+                            return found_sol
                         # find the locations for obstacles for the sampled path
                         obstacle_list = []
                         copy_graph = copy.deepcopy(self.abstract_graph)
