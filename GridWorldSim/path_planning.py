@@ -31,8 +31,6 @@ class Vertex():
 
         if cell_type == "Hazard":
             self.cost = 0.25
-        else:
-            self.cost = 0.01
 
     # adds a neighbor to the vertex with a distance and value across the edge
     # direction: 1=N, 2=E, 3=S, 4=W
@@ -238,8 +236,6 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
 
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
-
-    print("Built manager...")
 
     # start recursion to build out solution path list
     while len(paths) < num_paths:

@@ -37,6 +37,7 @@ class HumanAgent():
         self.real_graph = None
         self.damage_tracking_graph = None
         self.damage_taken = 0
+        self.distance_damage = 0.01
         self.start_distance = 10 #start 20 cells away from randomly chosen goal
         self.planner = planner #if no planner, don't wait to move
         # get file name from simulator
@@ -159,8 +160,9 @@ class HumanAgent():
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
-                print("INFLICT ", self.damage_tracking_graph.get_vertex(cur_key).cost)
-                self.damage_taken += self.damage_tracking_graph.get_vertex(cur_key).cost
+                temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
+                print("INFLICT ", temp_damage)
+                self.damage_taken += temp_damage
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
@@ -179,8 +181,9 @@ class HumanAgent():
                 self.move_helper(coord)
                 cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
-                print("INFLICT ", self.damage_tracking_graph.get_vertex(cur_key).cost)
-                self.damage_taken += self.damage_tracking_graph.get_vertex(cur_key).cost
+                temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
+                print("INFLICT ", temp_damage)
+                self.damage_taken += temp_damage
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
