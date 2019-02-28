@@ -19,7 +19,8 @@ class HumanSim():
 
     def run(self):
         human_agent = HumanAgent(planner=self.planner, optimal=self.optimal_human)
-        human_agent.run()
+        
+        return human_agent.run()
 
 
 
