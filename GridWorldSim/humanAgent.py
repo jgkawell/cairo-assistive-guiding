@@ -36,7 +36,7 @@ class HumanAgent():
         self.reward_removal_constant = 0.5
         self.real_graph = None
         self.damage_taken = 0
-        self.start_distance = 20 #start 20 cells away from randomly chosen goal
+        self.start_distance = 10 #start 20 cells away from randomly chosen goal
 
         # get file name from simulator
         file_name = self.robot.get_cur_file()
@@ -85,28 +85,29 @@ class HumanAgent():
         for xy in self.reward_states:
             goal = self.real_graph.get_key(xy)
             self.goals.append(goal)
-            print("Goal: " + str(xy))
 
-        # recreate robot with distance self.start_distance away from randomly chosen goal
-        rand_goal = self.goals[randint(0, len(self.goals)-1)]
-        goal_x, goal_y = self.real_graph.get_vertex(rand_goal).get_xy(self.world_size)
+        # generate a start position distant from goal states
         start_x, start_y = 0, 0
-        while (start_x, start_y) not in self.empty_states:
-            rand_x = randint(0, self.start_distance)
-            rand_y = self.start_distance - rand_x
-            start_x = abs(goal_x - rand_x)
-            start_y = abs(goal_y - rand_y)
+        done = False
+        while not done:
+            done = True
+            x1, y1 = self.empty_states[randint(0, len(self.empty_states)-1)]
+
+            for x2, y2 in self.reward_states:
+                dist = np.sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
+                if dist < self.start_distance:
+                    done = False
+
+            if done:
+                start_x, start_y = x1, y1
+
+        # recreate human agent with start positions
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
-        # generate start state
-        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        #start_x, start_y = 20, 22
         # build start info
         xy = (start_x, start_y)
         start = self.real_graph.get_key(xy)
-        print("Start: " + str(xy))
-
-
+        print("HUMAN:  Start: " + str(xy))
 
         #path plan with A*
         self.path = a_star(self.real_graph, start, self.goals)
@@ -124,7 +125,7 @@ class HumanAgent():
             while not can_move:
                 can_move = self.robot.can_human_move()
                 if not can_move:
-                    print("Waiting...", end='\r')
+                    print("HUMAN:  Waiting...", end='\r')
                     time.sleep(1)
                     
             # check current world state
@@ -132,7 +133,7 @@ class HumanAgent():
 
             # found new world knowledge
             if changed:
-                print("New world knowledge!")
+                print("HUMAN:  New world knowledge!")
                 # update world knowledge
                 self.real_graph = self.getHumanGraph()
 
@@ -141,11 +142,11 @@ class HumanAgent():
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.real_graph.get_key(xy)
                 self.path = a_star(self.real_graph, start, self.goals)
-                print("New path: ", self.path.vertex_keys)
+                print("HUMAN:  New path: ", self.path.vertex_keys)
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
-                print("Random Move")
+                print("HUMAN:  Random Move")
                 coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
 
                 # move and reset cur_key
@@ -186,7 +187,7 @@ class HumanAgent():
     def move_helper(self, coord):
         (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        print("Current, Intended:", (self.robot.posx, self.robot.posy), (x, y))
+        print("HUMAN:  Current, Intended:", (self.robot.posx, self.robot.posy), (x, y))
 
         # check for success
         msg = ""

@@ -50,6 +50,8 @@ class Simulator():
             for p in jobs:
                 p.join()
 
+            print("SIM: Done...")
+
 
             for agent, output in return_dict.values():
                 #TODO: Make planner return something more useful

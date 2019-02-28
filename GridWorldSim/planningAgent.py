@@ -15,6 +15,7 @@ import pickle
 import time
 import copy
 import sys
+import numpy as np
 
 
 class PlanningAgent():
@@ -45,15 +46,30 @@ class PlanningAgent():
         self.num_samples = 10
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
-        self.start_dist_from_robot = 10
+        self.start_distance = 10
 
-        #use for experiments
+        # use for experiments
         self.abstract = abstract
         self.probabilistic = probabilistic
         
         # import world
         self.world = pickle.load(open(self.robot.get_cur_file(), 'rb'))
         self.world_size = len(self.world)
+
+        # set up the real graph world
+        self.real_graph = Graph()
+        self.real_graph.setup_graph(self.world, self.world_size)
+
+        # get reward keys
+        for vertex in self.real_graph:
+            if vertex.cell_type == "Reward":
+                self.goal_keys.append(vertex.key)
+
+        # get human graph from sim
+        self.human_graph = self.getHumanGraph()
+
+        # request the current human position from the sim
+        self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
 
         # save empty states
         self.empty_states = []
@@ -64,39 +80,23 @@ class PlanningAgent():
                     # save empy states for start generation
                     self.empty_states.append((i,j))
 
-        # generate start state
-        #start_x, start_y = self.empty_states[randint(0, len(self.empty_states)-1)]
-        #start_x, start_y = 15, 22
-
-        # recreate robot with
-        human_x, human_y = self.robot.get_xy_pos(self.human_name)
+        # generate a start position distant from goal states
         start_x, start_y = 0, 0
-        while (start_x, start_y) not in self.empty_states:
-            rand_x = randint(0, self.start_dist_from_robot)
-            rand_y = self.start_dist_from_robot - rand_x
-            start_x = abs(human_x - rand_x)
-            start_y = abs(human_y - rand_y)
+        x2, y2 = self.real_graph.get_vertex(self.human_position).get_xy(self.world_size)
+        while True:
+            x1, y1 = self.empty_states[randint(0, len(self.empty_states)-1)]
+            dist = np.sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
+            if dist > self.start_distance and dist < self.start_distance+1:
+                start_x, start_y = x1, y1
+                break
+
+        # print start info
+        print("ROBOT:  Start: " + str((start_x, start_y)))
+
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
     def run(self):
-        print("Running...")
-
-        # set up the real true graph world
-        self.real_graph = Graph()
-        self.real_graph.setup_graph(self.world, self.world_size)
-
-
-        # get reward keys
-        for vertex in self.real_graph:
-            if vertex.cell_type == "Reward":
-                self.goal_keys.append(vertex.key)
-
-        # get human graph from sim
-        self.human_graph = self.getHumanGraph()
-
-
-        # request the current human position from the sim
-        self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+        print("ROBOT:  Running...")
 
         # run plan and move until human reaches a goal
         while self.human_position not in self.goal_keys:
@@ -128,7 +128,7 @@ class PlanningAgent():
     def plan(self):
         # if the human has diverged from the desired path, replan
         if self.human_position not in self.desired_path.vertex_keys:
-            print("Replanning...")
+            print("ROBOT:  Replanning...")
 
             found_sol = False
             maxed = False
@@ -142,7 +142,7 @@ class PlanningAgent():
                 start = timer()
 
                 # simplify for certain level
-                print("Running on level: ", level)
+                print("ROBOT:  Running on level: ", level)
                 #TODO: Doesn't work if we don't use abstraction. Fix abstract_graph code to be the full graph if self.abstract is False
                 new_size = self.simplifyWorld(old_size, level=self.max_level if not self.abstract else level)
                 level += 1
@@ -163,7 +163,7 @@ class PlanningAgent():
 
                 end = timer()
                 total = end - start
-                print("Took: ", total)
+                print("ROBOT:  Took: ", total)
 
             return found_sol
         else:
@@ -173,13 +173,13 @@ class PlanningAgent():
             # generate the expected human path
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
-            print("Human path cost: ", human_real_path.total_cost)
+            print("ROBOT:  Human path cost: ", human_real_path.total_cost)
 
             if human_real_path.total_cost >= self.cost_limit:
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False
                 for sample_num in range(self.sampling_limit):
-                    print("Sample number: ", sample_num+1, end="\r")
+                    print("ROBOT:  Sample number: ", sample_num+1, end="\r")
                 
                     # find a sampling of paths that fits constraints (cost_limit)
                     sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.num_samples)
@@ -213,7 +213,7 @@ class PlanningAgent():
                                 break             
 
                     if not found_sol:
-                        print("No solution...")
+                        print("ROBOT:  No solution...")
                     else:
                         break
             else:
@@ -234,8 +234,6 @@ class PlanningAgent():
 
         # iterate along path and generate needed obstacles based off of weighted cost
         for i in range(len_path):
-            len_human = len(human_path.vertex_keys)
-            #print("DESIRED VS HUMAN PATH: ", len_path, len_human)
             # set the current key
             cur_key = desired_path.vertex_keys[i]
 
@@ -292,7 +290,7 @@ class PlanningAgent():
 
             # invalid because no valid human path
             if len(human_path.vertex_keys) < 1 and cur_key not in self.goal_keys:
-                print("No human path to goal...")
+                print("ROBOT:  No human path to goal...")
                 obstacle_list = []
                 break
 
@@ -358,7 +356,7 @@ class PlanningAgent():
                 if robot_path_to_obstacle.distance < self.robot_speed * human_path_to_obstacle.distance:
                     first = False
                     found_sol = True
-                    print("Found solution!")
+                    print("ROBOT:  Found solution!")
                 else:
                     break #if human closer to first obstacle in list, this plan isn't feasible
 
@@ -387,7 +385,7 @@ class PlanningAgent():
             # check sim to find allowance to move
             can_move = self.robot.can_robot_move()
             if not can_move:
-                print("Waiting...", end='\r')
+                print("ROBOT:  Waiting...", end='\r')
                 time.sleep(1)
             else:
                 mitigation_path_size = len(self.mitigation_path.vertex_keys)
@@ -401,7 +399,7 @@ class PlanningAgent():
                             vtx_key = self.mitigation_path.vertex_keys[self.mitigation_path_pos]
 
                             # move to next position in path
-                            print("Moving...")
+                            print("ROBOT:  Moving...")
                             self.move_helper(self.real_graph.get_vertex(vtx_key))
 
                             # try to place obstacle
@@ -416,12 +414,12 @@ class PlanningAgent():
                                             if wait == -1:
                                                 return
                                             elif wait:
-                                                print("Waiting...")
+                                                print("ROBOT:  Waiting...")
                                                 self.robot.set_can_human_move(True)
                                                 time.sleep(1)
                                             
                                     
-                                        print("Placing obstacle...")
+                                        print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
                                 
                             # allow human to move after all robot moves completed
@@ -430,7 +428,7 @@ class PlanningAgent():
                             
                             self.mitigation_path_pos += 1
                 else:
-                    print("Nothing to do...")
+                    print("ROBOT:  Nothing to do...")
 
     def will_block_human(self, cur_key, next_key):
         # request the current human position from the sim and pull out the index
@@ -439,7 +437,7 @@ class PlanningAgent():
         try:
             human_pos = self.desired_path.vertex_keys.index(self.human_position)
         except:
-            print("Human off of desired path...")
+            print("ROBOT:  Human off of desired path...")
             return -1
 
         for i in range(len(self.desired_path_abstract.vertex_keys)-1):
@@ -586,7 +584,6 @@ class PlanningAgent():
     # creates the abstract representaion of the world
     # self.real_graph -> self.abstract_graph
     def simplifyWorld(self, world_size, level):
-        print("LEVEL ", level)
         # first level that just pulls out intersections
         if level == 0:
             # initialize empty graph
@@ -678,7 +675,7 @@ class PlanningAgent():
 
                             # error check
                             if new_key == -1:
-                                print("ERROR")
+                                print("ROBOT:  ERROR")
                             else:
                                 # make deep copy of the new vertex
                                 new_vertex = copy.deepcopy(self.real_graph.get_vertex(new_key))
