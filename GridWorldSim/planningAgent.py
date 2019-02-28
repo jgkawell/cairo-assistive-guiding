@@ -92,12 +92,11 @@ class PlanningAgent():
                 break
 
         # print start info
+        start_x, start_y = 18, 13
         print("ROBOT:  Start: " + str((start_x, start_y)))
-
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
     def run(self):
-        print("ROBOT:  Running...")
 
         # run plan and move until human reaches a goal
         while self.human_position not in self.goal_keys:
@@ -116,7 +115,7 @@ class PlanningAgent():
 
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
-        return self.abstract
+
 
 
 
@@ -418,8 +417,7 @@ class PlanningAgent():
                                                 print("ROBOT:  Waiting...")
                                                 self.robot.set_can_human_move(True)
                                                 time.sleep(1)
-                                            
-                                    
+
                                         print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
                                 

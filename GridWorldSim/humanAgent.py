@@ -25,7 +25,7 @@ import sys
 
 class HumanAgent():
 
-    def __init__(self, knowledge=1, optimal=True):
+    def __init__(self, knowledge=1, optimal=True, planner=False):
         # Initialise globals
         self.robot = GRobot("HumanAgent", colour="blue")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
@@ -37,7 +37,7 @@ class HumanAgent():
         self.real_graph = None
         self.damage_taken = 0
         self.start_distance = 10 #start 20 cells away from randomly chosen goal
-
+        self.planner = planner #if no planner, don't wait to move
         # get file name from simulator
         file_name = self.robot.get_cur_file()
 
@@ -72,7 +72,6 @@ class HumanAgent():
     def run(self):
         self.plan()
         self.move()
-        return self.damage_taken
 
     def plan(self):
         # generate graph world
@@ -102,6 +101,7 @@ class HumanAgent():
                 start_x, start_y = x1, y1
 
         # recreate human agent with start positions
+        start_x, start_y = 4, 3
         self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
 
         # build start info
@@ -120,9 +120,8 @@ class HumanAgent():
         while cur_key not in self.goals:
             # pause before moving
             time.sleep(1)
-            
             # check sim to find allowance to move
-            while not can_move:
+            while not can_move and self.planner:
                 can_move = self.robot.can_human_move()
                 if not can_move:
                     print("HUMAN:  Waiting...", end='\r')
@@ -130,7 +129,6 @@ class HumanAgent():
                     
             # check current world state
             valid, changed = self.robot.look()
-
             # found new world knowledge
             if changed:
                 print("HUMAN:  New world knowledge!")
