@@ -161,7 +161,7 @@ class HumanAgent():
                 # get a random neighbor
                 xy = (self.robot.posx, self.robot.posy)
                 cur_neighbors = self.human_graph.get_vertex(self.human_graph.get_key(xy)).get_neighbors()
-                rand_neighbor = np.random.randint(0, len(cur_neighbors))
+                rand_neighbor = list(cur_neighbors.keys())[np.random.randint(0, len(cur_neighbors))]
                 coord = self.human_graph.get_vertex(rand_neighbor).get_xy(self.world_size)
 
                 # move and reset cur_key
