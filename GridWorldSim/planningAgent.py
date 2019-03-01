@@ -492,9 +492,6 @@ class PlanningAgent():
         try:
             key = self.desired_path.vertex_keys[0]
             del(self.desired_path.vertex_keys[0])
-        
-            if key == self.desired_path_abstract.vertex_keys[0]:
-                del(self.desired_path_abstract.vertex_keys[0])
         except:
             x = 0
 
