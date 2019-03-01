@@ -32,7 +32,7 @@ class HumanAgent():
         self.path = []
         self.knowledge = knowledge
         self.optimal = optimal
-        self.optimality_constant = 0.2
+        self.optimality_constant = 0.05
         self.reward_removal_constant = 0.5
         self.human_graph = None
         self.damage_tracking_graph = None

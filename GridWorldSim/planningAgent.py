@@ -90,7 +90,7 @@ class PlanningAgent():
             x1, y1 = self.empty_states[randint(0, len(self.empty_states)-1)]
             temp_path = path_planning.a_star(self.real_graph, self.real_graph.get_key((x1,y1)), [self.real_graph.get_key((x2,y2))])
 
-            if len(temp_path.vertex_keys) <= self.start_distance:
+            if len(temp_path.vertex_keys) <= self.start_distance and len(temp_path.vertex_keys) > 1:
                 start_x, start_y = x1, y1
                 break
 
@@ -204,9 +204,9 @@ class PlanningAgent():
             # generate the expected human path
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
-            print("ROBOT:  Human path cost: ", human_real_path.total_cost)
-
             current_cost = self.robot.get_human_damage()
+            print("ROBOT:  Human path cost: ", human_real_path.total_cost + current_cost)
+
             if human_real_path.total_cost + current_cost >= self.cost_limit:
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False

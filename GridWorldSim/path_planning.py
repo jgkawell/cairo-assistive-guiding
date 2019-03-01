@@ -128,7 +128,7 @@ class PlanningPath():
         self.obstacles[(key, pos)].append(obstacle)
 
     def calculate_total(self):
-        return self.cost + (0.01 * self.distance)
+        return self.cost + (0.001 * self.distance)
 
     def __eq__(self, other):
         return self.vertex_keys == other.vertex_keys
