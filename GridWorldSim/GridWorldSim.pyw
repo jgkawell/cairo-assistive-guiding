@@ -649,10 +649,9 @@ class GridWorldSim(tk.Tk):
                     rmsg = str(self.exited)
                 elif msg[0] == "get_human_damage":
                     rmsg = str(self.human_damage)
-
                 elif msg[0] == "set_human_damage":
                     self.human_damage = eval(msg[1])
-
+                    rmsg = "OK"
                 else:
                     # updates the current version of human_graph
                     rmsg = self.update_human_graph(message)

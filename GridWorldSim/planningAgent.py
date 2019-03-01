@@ -230,6 +230,7 @@ class PlanningAgent():
 
                     for sample_path in sample_paths:
                         start = timer()
+                        print(sample_path.total_cost)
 
                         # find the locations for obstacles for the sampled path
                         obstacle_list = []
