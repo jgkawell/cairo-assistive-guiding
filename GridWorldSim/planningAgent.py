@@ -118,6 +118,7 @@ class PlanningAgent():
             # allow the human to move
             self.robot.set_can_human_move(True)
 
+            time.sleep(1)
             while True:
                 if self.robot.can_robot_move():
                     break
@@ -201,8 +202,6 @@ class PlanningAgent():
 
     def findSolution(self, start_key):
             # generate the expected human path
-            human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
-            human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
             print("ROBOT:  Human path cost: ", human_real_path.total_cost)
 
             if human_real_path.total_cost >= self.cost_limit:
@@ -251,7 +250,7 @@ class PlanningAgent():
 
                             # if valid, generate the desired path for the human given obstacles
                             if found_sol:
-                                # get real graph representation of path to set desired_path  
+                                # get real graph representation of path to set desired_path
                                 full_path = path_planning.abstract_to_full_path(self.real_graph, sample_path)
                                 self.desired_path = copy.deepcopy(full_path)
                                 self.desired_path_abstract = copy.deepcopy(sample_path)
@@ -488,7 +487,7 @@ class PlanningAgent():
             del(self.desired_path.vertex_keys[0])
         
             if key == self.desired_path_abstract.vertex_keys[0]:
-                del(self.desired_path.vertex_keys[0])
+                del(self.desired_path_abstract.vertex_keys[0])
         except:
             x = 0
 
