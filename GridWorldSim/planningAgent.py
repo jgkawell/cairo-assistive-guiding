@@ -49,6 +49,7 @@ class PlanningAgent():
         self.human_optimality_prob = 0.8
         self.start_distance = 10
         self.time_limit = 15
+        self.time_spent = 0
 
         # use for experiments
         self.abstract = abstract
@@ -145,13 +146,7 @@ class PlanningAgent():
             level = 0
             old_size = 0
             self.previous_paths = []
-
-            manager = mp.Manager()
-            timer_dict = manager.dict()
-            jobs = []
-            p = mp.Process(target=self.elapseTime, args=(0, timer_dict))
-            jobs.append(p)
-            p.start()
+            self.time_spent = 0
 
             # loop plan until a solution is found or the abstraction is maxed
             while not found_sol and not maxed:
@@ -177,19 +172,25 @@ class PlanningAgent():
                 self.mitigation_path = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
                 self.desired_path_abstract = PlanningPath(vertex_keys=[], distance=0, cost=0, obstacles={})
                 self.mitigation_path_pos = 0
-                found_sol = self.findSolution(self.human_position, timer_dict)
+                found_sol = self.findSolution(self.human_position)
+
+                if found_sol == -1:
+                    found_sol = False
+                    break
 
                 end = timer()
-                total = end - start
-                print("ROBOT:  Took: ", total)
-                # reset timer
-                if p.is_alive(): p.terminate()
-                if len(timer_dict) > 0: timer_dict.clear()
+                self.time_spent += end - start
+                print("ROBOT:  Took: ", end - start)
+
+                if self.time_spent > self.time_limit:
+                    print("ROBOT: Ran out of time...")
+                    break
+
             return found_sol
         else:
             return True
 
-    def findSolution(self, start_key, timer_dict):
+    def findSolution(self, start_key):
             # generate the expected human path
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
@@ -201,21 +202,27 @@ class PlanningAgent():
                 for sample_num in range(self.num_samples):
                     print("ROBOT:  Sample number: ", sample_num+1)
                 
+                    start = timer()
                     # find a sampling of paths that fits constraints (cost_limit)
-                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.sample_size)
+                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.sample_size, self.time_spent, self.time_limit)
                     for sample_path in sample_paths:
                         if sample_path not in self.previous_paths:
                             self.previous_paths.append(sample_path)
                         else:
                             sample_paths.remove(sample_path)
+                    print("ROBOT: Finished sampling...")
+                    end = timer()
+                    self.time_spent += end - start
+                    if self.time_spent > self.time_limit:
+                        print("ROBOT: Ran out of time...")
+                        return False
 
                     # sort list by total cost
                     sample_paths.sort(key=lambda x: x.total_cost, reverse=False)
 
                     for sample_path in sample_paths:
-                        if len(timer_dict) != 0:
-                            print("Time's up, took: ", timer_dict[0])
-                            return found_sol
+                        start = timer()
+
                         # find the locations for obstacles for the sampled path
                         obstacle_list = []
                         copy_graph = copy.deepcopy(self.abstract_graph)
@@ -226,6 +233,12 @@ class PlanningAgent():
                         if len(obstacle_list) > 0:
                             # find the mitigation path for the obstacle list
                             found_sol = self.planMitigationPath(obstacle_list, start_key)
+
+                            end = timer()
+                            self.time_spent += end - start
+                            if self.time_spent > self.time_limit:
+                                print("ROBOT: Ran out of time...")
+                                return False
 
                             # if valid, generate the desired path for the human given obstacles
                             if found_sol:

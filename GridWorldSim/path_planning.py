@@ -4,6 +4,7 @@ import copy
 import random
 import multiprocessing
 from collections import OrderedDict
+from timeit import default_timer as timer
 
 class PriorityQueue:
     def __init__(self):
@@ -229,7 +230,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects
-def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
+def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, time_limit):
     # initialize paths and start vertex
     paths = []
     start_vertex = graph.get_vertex(start_key)
@@ -239,7 +240,7 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
 
     # start recursion to build out solution path list
     while len(paths) < num_paths:
-        
+        start = timer()
         jobs = []        
         for i in range(num_paths):
             cur_path = PlanningPath([start_key])
@@ -255,6 +256,12 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths):
                 paths.append(new_path)
                 if len(paths) == num_paths:
                     break
+
+        end = timer()
+        time_spent += end - start
+        if time_spent > time_limit:
+            return []
+
 
     return paths
 
