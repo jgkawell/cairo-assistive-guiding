@@ -27,6 +27,6 @@ class HumanSim():
 
 
 if __name__ == '__main__':
-    sim = HumanSim(planner=False, optimal_human=False)
+    sim = HumanSim(planner=True, optimal_human=False)
     damage = sim.run()
     print("FINAL DAMAGE: ", damage)

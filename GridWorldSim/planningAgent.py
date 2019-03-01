@@ -166,14 +166,14 @@ class PlanningAgent():
                 print("ROBOT:  Running on level: ", level)
                 #TODO: Doesn't work if we don't use abstraction. Fix abstract_graph code to be the full graph if self.abstract is False
                 new_size = self.simplifyWorld(old_size, level=self.max_level if not self.abstract else level)
-                print("New size is: ", new_size)
                 level += 1
 
                 # check to see if abstraction has changed sizes; if not, stop
-                if old_size == new_size:
-                    maxed = True
-                else:
-                    old_size = new_size
+                if not self.abstract:
+                    if old_size == new_size:
+                        maxed = True
+                    else:
+                        old_size = new_size
 
                 # find best solution for the current abstraction level
                 # and save to self.desired_path and self.mitigation_path
@@ -657,32 +657,39 @@ class PlanningAgent():
     # self.real_graph -> self.abstract_graph
     def simplifyWorld(self, world_size, level):
         # first level that just pulls out intersections
-        if level == 0:
-            # initialize empty graph
-            self.abstract_graph = Graph()
-            self.abstract_graph.world_size = self.world_size
-            # generate the intial set of vertices
-            key_list = self.generateInitialVertices()
-            # generate the new edges between vertices
-            self.generateEdges(key_list)
-
-        # other levels which adds in intermediate vertices
-        else:
-            # set distance limit for generating new vertices
-            distance_limit = 5 - level
-            if distance_limit < 1:
-                distance_limit = 1
-            # generate new vertices between current vertices
-            key_list = self.generateIntermediateVertices(distance_limit)
-            # generate the new edges between vertices
-            self.generateEdges(key_list)
-
-        # show and count current vertices
         size = 0
-        for vertex in self.abstract_graph:
-            size += 1
-            x, y = vertex.get_xy(self.world_size)
-            if self.show_abstraction: self.robot.modify_cell_look(x, y, "Door")
+        if not self.abstract:
+            self.abstract_graph = self.real_graph
+            for vertex in self.abstract_graph:
+                size += 1
+                x, y = vertex.get_xy(self.world_size)
+                if self.show_abstraction: self.robot.modify_cell_look(x, y, "Door")
+        else:
+            if level == 0:
+                # initialize empty graph
+                self.abstract_graph = Graph()
+                self.abstract_graph.world_size = self.world_size
+                # generate the intial set of vertices
+                key_list = self.generateInitialVertices()
+                # generate the new edges between vertices
+                self.generateEdges(key_list)
+
+            # other levels which adds in intermediate vertices
+            else:
+                # set distance limit for generating new vertices
+                distance_limit = 5 - level
+                if distance_limit < 1:
+                    distance_limit = 1
+                # generate new vertices between current vertices
+                key_list = self.generateIntermediateVertices(distance_limit)
+                # generate the new edges between vertices
+                self.generateEdges(key_list)
+
+            # show and count current vertices
+            for vertex in self.abstract_graph:
+                size += 1
+                x, y = vertex.get_xy(self.world_size)
+                if self.show_abstraction: self.robot.modify_cell_look(x, y, "Door")
 
         return size
 

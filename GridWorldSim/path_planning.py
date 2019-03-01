@@ -288,6 +288,7 @@ def find_paths(graph, start_key, goal_keys, num_paths, current_cost, cost_limit,
 def dummy(p_num, return_dict, graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path):
     return_dict[p_num] = recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path)
 
+#TODO: Modify timer so that planner doesn't infinitely recurse when self.abstract = False
 def recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path):
     # pull out neighbors to iterate through
     cur_neighbors = copy.deepcopy(cur_vertex.get_neighbors())
