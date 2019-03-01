@@ -3,6 +3,7 @@ import heapq
 import copy
 import random
 import multiprocessing
+import numpy as np
 from collections import OrderedDict
 from timeit import default_timer as timer
 

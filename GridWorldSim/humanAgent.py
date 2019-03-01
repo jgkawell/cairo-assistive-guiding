@@ -151,6 +151,7 @@ class HumanAgent():
                 xy = (self.robot.posx, self.robot.posy)
                 start = self.human_graph.get_key(xy)
                 self.path = a_star(self.human_graph, start, self.goals)
+                del(self.path.vertex_keys[0])
                 print("HUMAN:  New path: ", self.path.vertex_keys)
 
             # if making a random move, rerun A*

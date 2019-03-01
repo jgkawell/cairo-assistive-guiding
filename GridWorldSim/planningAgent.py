@@ -113,14 +113,20 @@ class PlanningAgent():
             if found_sol:
                 # execute action
                 self.move()
+                self.robot.set_can_robot_move(False)
 
             # allow the human to move
             self.robot.set_can_human_move(True)
-            time.sleep(1)
-            self.removeDesiredPathFirstEntry()
+
+            while True:
+                if self.robot.can_robot_move():
+                    break
+                else:
+                    time.sleep(1)
 
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+            self.removeDesiredPathFirstEntry()
 
     # gets the human_graph from the sim
     def getHumanGraph(self):
@@ -136,6 +142,10 @@ class PlanningAgent():
 
     # plan a path to execute
     def plan(self):
+
+        print(self.human_position)
+        print(self.desired_path.vertex_keys)
+
         # if the human has diverged from the desired path, replan
         if self.human_position not in self.desired_path.vertex_keys:
             print("ROBOT:  Replanning...")
@@ -341,7 +351,7 @@ class PlanningAgent():
 
             # invalid because no valid human path
             if len(human_path.vertex_keys) < 1 and cur_key not in self.goal_keys:
-                print("ROBOT:  No human path to goal...")
+                # print("ROBOT:  No human path to goal...")
                 obstacle_list = []
                 break
 
@@ -458,25 +468,15 @@ class PlanningAgent():
                                 if new_obstacle != None:
                                     cur_key = new_obstacle[0]
                                     for next_key in new_obstacle[1]:
-                                        wait = True
-                                        while wait:
-                                            wait = self.will_block_human(cur_key, next_key)
-                                            if wait == -1:
-                                                return
-                                            elif wait:
-                                                print("ROBOT:  Waiting...")
-                                                self.robot.set_can_human_move(True)
-                                                time.sleep(1)
-                                                self.removeDesiredPathFirstEntry
+                                        wait = self.will_block_human(cur_key, next_key)
+                                        if wait == -1:
+                                            return
+                                        elif wait:
+                                            print("ROBOT:  Waiting...")
+                                            return
 
                                         print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
-                                
-                            # allow human to move after all robot moves completed
-                            if cur_move == self.robot_speed-1:
-                                self.robot.set_can_human_move(True)
-                                time.sleep(1)
-                                self.removeDesiredPathFirstEntry()
                             
                             self.mitigation_path_pos += 1
                 else:
