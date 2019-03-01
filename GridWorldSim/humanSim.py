@@ -11,11 +11,9 @@ import sys
 #TODO: (1)Prevent simulator from erroring out when jobs complete (2)Fix wierd behavior from both agents (race condition maybe?)
 class HumanSim():
     #bools for (1) having a PlanningAgent (2) Using graph abstraction (3) Optimal vs non-optimal, probabilistic human (4) whether or not PlanningAgent uses a probabilistic model
-    def __init__(self, planner=True, abstract=True, optimal_human=True, probabilistic_model=True):
+    def __init__(self, planner=True, optimal_human=True):
         self.planner = planner
-        self.abstract = abstract
         self.optimal_human = optimal_human
-        self.probabilistic_model = probabilistic_model
         self.agent = HumanAgent(planner=self.planner, optimal=self.optimal_human)
 
     def run(self):
@@ -29,6 +27,6 @@ class HumanSim():
 
 
 if __name__ == '__main__':
-    sim = HumanSim()
+    sim = HumanSim(planner=False, optimal_human=False)
     damage = sim.run()
     print("FINAL DAMAGE: ", damage)

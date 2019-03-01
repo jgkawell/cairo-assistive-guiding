@@ -166,6 +166,7 @@ class PlanningAgent():
                 print("ROBOT:  Running on level: ", level)
                 #TODO: Doesn't work if we don't use abstraction. Fix abstract_graph code to be the full graph if self.abstract is False
                 new_size = self.simplifyWorld(old_size, level=self.max_level if not self.abstract else level)
+                print("New size is: ", new_size)
                 level += 1
 
                 # check to see if abstraction has changed sizes; if not, stop
@@ -316,9 +317,15 @@ class PlanningAgent():
                             full_possible_human_path = path_planning.abstract_to_full_path(self.real_graph, possible_human_path)
 
                             if neighbor == predicted_key:  # predicted path
-                                costs[neighbor] = 1 #full_possible_human_path.total_cost #(self.human_optimality_prob) * full_possible_human_path.total_cost
+                                if self.probabilistic:
+                                    costs[neighbor] = (self.human_optimality_prob) * full_possible_human_path.total_cost
+                                else:
+                                    costs[neighbor] = 1
                             else:  # unpredicted path
-                                costs[neighbor] = 0 #full_possible_human_path.total_cost #(1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+                                if self.probabilistic:
+                                    costs[neighbor] = (1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+                                else:
+                                    costs[neighbor] = 0
 
                 cur_path = PlanningPath()
                 prev_vertex = self.abstract_graph.get_vertex(desired_path.vertex_keys[0])
