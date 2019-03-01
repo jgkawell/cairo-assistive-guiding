@@ -231,7 +231,7 @@ def a_star(graph, start_key, goal_keys): #pass in start vertex, goal vertices
 
 # finds all the possible paths from a start (key) position to given goals (keys)
 # returns a list of path objects
-def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, time_limit):
+def find_paths(graph, start_key, goal_keys, num_paths, current_cost, cost_limit, time_spent, time_limit):
     # initialize paths and start vertex
     paths = []
     start_vertex = graph.get_vertex(start_key)
@@ -247,7 +247,7 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, t
     #     jobs = []        
     #     for i in range(num_paths):
     #         cur_path = PlanningPath([start_key])
-    #         p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, cost_limit, cur_path))
+    #         p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path))
     #         jobs.append(p)
     #         p.start()
         
@@ -271,18 +271,24 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, t
     # --------------------------------------------
     # start recursion to build out solution path list
     while len(paths) < num_paths:
+        start = timer()
         cur_path = PlanningPath([start_key])
-        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
+        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path)
         if solved and new_path not in paths:
             paths.append(new_path)
+
+        end = timer()
+        time_spent += end - start
+        if time_spent > time_limit:
+            return []
     # --------------------------------------------
 
     return paths
 
-def dummy(p_num, return_dict, graph, cur_vertex, goal_keys, cost_limit, cur_path):
-    return_dict[p_num] = recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path)
+def dummy(p_num, return_dict, graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path):
+    return_dict[p_num] = recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path)
 
-def recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path):
+def recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path):
     # pull out neighbors to iterate through
     cur_neighbors = copy.deepcopy(cur_vertex.get_neighbors())
 
@@ -306,14 +312,14 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path):
             new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.cost)
             new_path.add_vertex(key, new_distance=info[1], new_cost=info[2])
 
-            if new_path.total_cost < cost_limit:
+            if new_path.total_cost + current_cost < cost_limit:
                 # found solution
                 if key in goal_keys:
                     return True, new_path
                 else:
                     # pull out new vertex and pass it for the recursion
                     new_vertex = graph.get_vertex(key)
-                    solved, new_path = recurse_path_finding(graph, new_vertex, goal_keys, cost_limit, new_path)
+                    solved, new_path = recurse_path_finding(graph, new_vertex, goal_keys, current_cost, cost_limit, new_path)
                     if solved:
                         return solved, new_path
 

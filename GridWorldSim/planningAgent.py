@@ -211,7 +211,8 @@ class PlanningAgent():
                 
                     start = timer()
                     # find a sampling of paths that fits constraints (cost_limit)
-                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.sample_size, self.time_spent, self.time_limit)
+                    current_cost = self.robot.get_human_damage()
+                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.sample_size, current_cost, self.cost_limit, self.time_spent, self.time_limit)
                     for sample_path in sample_paths:
                         if sample_path not in self.previous_paths:
                             self.previous_paths.append(sample_path)
