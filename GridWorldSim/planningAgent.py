@@ -206,8 +206,8 @@ class PlanningAgent():
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
             print("ROBOT:  Human path cost: ", human_real_path.total_cost)
 
-            cur_damage = self.robot.get_human_damage()
-            if human_real_path.total_cost + cur_damage >= self.cost_limit:
+            current_cost = self.robot.get_human_damage()
+            if human_real_path.total_cost + current_cost >= self.cost_limit:
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False
                 for sample_num in range(self.num_samples):
@@ -216,7 +216,7 @@ class PlanningAgent():
                     start = timer()
                     # find a sampling of paths that fits constraints (cost_limit)
                     current_cost = self.robot.get_human_damage()
-                    sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.sample_size, current_cost, self.cost_limit, self.time_spent, self.time_limit)
+                    sample_paths = path_planning.find_paths(self.abstract_graph, current_cost, start_key, self.goal_keys, self.sample_size, current_cost, self.cost_limit, self.time_spent, self.time_limit)
                     for sample_path in sample_paths:
                         if sample_path not in self.previous_paths:
                             self.previous_paths.append(sample_path)
@@ -342,8 +342,8 @@ class PlanningAgent():
 
                 for key, cost in costs.items():
                     predicted_cost = cost + cur_cost
-                    cur_cost = self.robot.get_human_damage()
-                    if predicted_cost + cur_cost > self.cost_limit:
+                    current_cost = self.robot.get_human_damage()
+                    if predicted_cost + current_cost > self.cost_limit:
                         new_obstacles.append(key)
                         self.removeEdgeFromGivenGraph(copy_graph, cur_key, key)
                         repeat = True
