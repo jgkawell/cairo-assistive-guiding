@@ -492,11 +492,13 @@ class PlanningAgent():
             return -1
 
         for i in range(len(self.desired_path_abstract.vertex_keys)-1):
-            key_a = self.desired_path.vertex_keys[i]
-            key_b = self.desired_path.vertex_keys[i+1]
+            key_a = self.desired_path_abstract.vertex_keys[i]
+            key_b = self.desired_path_abstract.vertex_keys[i+1]
 
             if key_b == cur_key and key_a == next_key:
-                if human_pos < i+1:
+                vertex_pos = self.desired_path.vertex_keys.index(key_b)
+                if human_pos < vertex_pos:
+                    print("ROBOT: Will block human")
                     return True
 
         return False
