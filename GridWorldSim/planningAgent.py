@@ -101,6 +101,11 @@ class PlanningAgent():
 
         # run plan and move until human reaches a goal
         while self.human_position not in self.goal_keys:
+            # check if human has exited
+            if self.robot.is_exited():
+                print("ROBOT: Sim exited")
+                break
+            
             # plan action
             found_sol = self.plan()
 

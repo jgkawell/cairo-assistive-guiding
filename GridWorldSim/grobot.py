@@ -130,6 +130,12 @@ class GRobot():
     def set_can_robot_move(self, value):
         return self._send("set_can_robot_move " + str(value))
 
+    def set_exited(self, value):
+        return self._send("set_exited " + str(value))
+
+    def is_exited(self):
+        return eval(self._send("is_exited"))
+
 
 
 def demo():

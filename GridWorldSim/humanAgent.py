@@ -191,6 +191,12 @@ class HumanAgent():
 
                 i += 1
 
+            if self.damage_taken >= self.damage_limit:
+                print("HUMAN: Damage limit reached (FAILURE)")
+                self.robot.set_exited(True)
+                break
+
+
     def getHumanGraph(self):
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.get_cur_human_graph())

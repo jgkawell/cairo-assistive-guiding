@@ -121,6 +121,7 @@ class GridWorldSim(tk.Tk):
         # Other variables for sim
         self.can_human_move = False
         self.can_robot_move = False
+        self.exited = False
 
         # Start server for robot programs to connect
         self.tcpTrd = Thread(target=self.tcpServer)
@@ -638,6 +639,13 @@ class GridWorldSim(tk.Tk):
                     #sets ability for planning agent to move or not
                     self.can_robot_move = eval(msg[1])
                     rmsg = "OK"
+                elif msg[0] == "set_exited":
+                    #sets exited boolean
+                    self.exited = eval(msg[1])
+                    rmsg = "OK"
+                elif msg[0] == "is_exited":
+                    #sets exited boolean
+                    rmsg = str(self.exited)
                 else:
                     # updates the current version of human_graph
                     rmsg = self.update_human_graph(message)
