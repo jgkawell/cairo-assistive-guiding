@@ -88,6 +88,8 @@ class HumanAgent():
         self.robot.set_exited(True)
 
         print("HUMAN: Exit")
+        if not self.planner:
+            self.robot.end_program()
         return self.damage_taken
 
     def plan(self):
