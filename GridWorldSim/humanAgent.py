@@ -134,7 +134,7 @@ class HumanAgent():
             while not can_move and self.planner:
                 can_move = self.robot.can_human_move()
                 if not can_move:
-                    print("HUMAN:  Waiting...")
+                    # print("HUMAN:  Waiting...")
                     time.sleep(1)
                     
             # check current world state

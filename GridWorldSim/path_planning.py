@@ -290,24 +290,31 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, cost_limit, cur_path):
     random.shuffle(list_neighbors)
     cur_neighbors = OrderedDict(list_neighbors)
     for key, info in cur_neighbors.items():
-        # make a copy of the path with the new vertex
-        new_vertex_list = []
-        for temp_key in cur_path.vertex_keys:
-            new_vertex_list.append(temp_key)
 
-        new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.cost)
-        new_path.add_vertex(key, new_distance=info[1], new_cost=info[2])
+        proceed = True
+        if key == cur_path.vertex_keys[-1]:
+            if np.random.uniform() > 0.25:
+                proceed = False
+        
+        if proceed:
+            # make a copy of the path with the new vertex
+            new_vertex_list = []
+            for temp_key in cur_path.vertex_keys:
+                new_vertex_list.append(temp_key)
 
-        if new_path.total_cost < cost_limit:
-            # found solution
-            if key in goal_keys:
-                return True, new_path
-            else:
-                # pull out new vertex and pass it for the recursion
-                new_vertex = graph.get_vertex(key)
-                solved, new_path = recurse_path_finding(graph, new_vertex, goal_keys, cost_limit, new_path)
-                if solved:
-                    return solved, new_path
+            new_path = PlanningPath(new_vertex_list, cur_path.distance, cur_path.cost)
+            new_path.add_vertex(key, new_distance=info[1], new_cost=info[2])
+
+            if new_path.total_cost < cost_limit:
+                # found solution
+                if key in goal_keys:
+                    return True, new_path
+                else:
+                    # pull out new vertex and pass it for the recursion
+                    new_vertex = graph.get_vertex(key)
+                    solved, new_path = recurse_path_finding(graph, new_vertex, goal_keys, cost_limit, new_path)
+                    if solved:
+                        return solved, new_path
 
     return False, PlanningPath()
 

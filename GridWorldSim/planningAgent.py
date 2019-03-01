@@ -43,7 +43,7 @@ class PlanningAgent():
 
         # adjustable parameters
         self.cost_limit = 0.5
-        self.num_samples = 1
+        self.num_samples = 3
         self.sample_size = 20
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
@@ -116,9 +116,8 @@ class PlanningAgent():
 
             # allow the human to move
             self.robot.set_can_human_move(True)
-
-            # pauses
             time.sleep(1)
+            self.removeDesiredPathFirstEntry()
 
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
@@ -420,13 +419,12 @@ class PlanningAgent():
 
                 # add vertices to mitigation path
                 for key in robot_path_to_obstacle.vertex_keys:
-                    if key != robot_position:
-                        # add vertex to path
-                        self.mitigation_path.add_vertex(key, obstacles=[])
-                        
-                        # encode obstacle into vertex that needs obstacle placement
-                        if key == obstacle_key:
-                            self.mitigation_path.add_obstacle(key, pos=len(self.mitigation_path.vertex_keys)-1, obstacle=obstacle)
+                    # add vertex to path
+                    self.mitigation_path.add_vertex(key, obstacles=[])
+                    
+                    # encode obstacle into vertex that needs obstacle placement
+                    if key == obstacle_key:
+                        self.mitigation_path.add_obstacle(key, pos=len(self.mitigation_path.vertex_keys)-1, obstacle=obstacle)
 
                 # reset the robot position
                 robot_position = obstacle_key
@@ -469,6 +467,7 @@ class PlanningAgent():
                                                 print("ROBOT:  Waiting...")
                                                 self.robot.set_can_human_move(True)
                                                 time.sleep(1)
+                                                self.removeDesiredPathFirstEntry
 
                                         print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
@@ -476,10 +475,22 @@ class PlanningAgent():
                             # allow human to move after all robot moves completed
                             if cur_move == self.robot_speed-1:
                                 self.robot.set_can_human_move(True)
+                                time.sleep(1)
+                                self.removeDesiredPathFirstEntry()
                             
                             self.mitigation_path_pos += 1
                 else:
                     print("ROBOT:  Nothing to do...")
+
+    def removeDesiredPathFirstEntry(self):
+        try:
+            key = self.desired_path.vertex_keys[0]
+            del(self.desired_path.vertex_keys[0])
+        
+            if key == self.desired_path_abstract.vertex_keys[0]:
+                del(self.desired_path.vertex_keys[0])
+        except:
+            x = 0
 
     def will_block_human(self, cur_key, next_key):
         # request the current human position from the sim and pull out the index

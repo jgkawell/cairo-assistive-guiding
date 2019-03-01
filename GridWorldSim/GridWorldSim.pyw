@@ -108,7 +108,7 @@ class GridWorldSim(tk.Tk):
         self.screen.onclick(self.clickGrid, btn=1)  # Mouse left button
 
         # Initialize default world
-        self.defaultWorld = "./Maps/OfficeSingleNew.map"
+        self.defaultWorld = "./Maps/OfficeSingleSimple.map"
         self.cur_file = self.defaultWorld # Save the current file for other agents to pull from
         self.defaultWorldSize = 31
         self.explored = [[False] * (self.defaultWorldSize) for i in range(self.defaultWorldSize)]  # unexplored map
