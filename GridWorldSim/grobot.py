@@ -142,6 +142,10 @@ class GRobot():
     def set_human_damage(self, value):
         return self._send("set_human_damage " + str(value))
 
+    def end_program(self):
+        return self._send("end_program " + self.rname)
+
+
 
 def demo():
     # print() used to show return value from method/function calls

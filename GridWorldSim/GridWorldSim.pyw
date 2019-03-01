@@ -62,6 +62,7 @@ import struct
 import copy
 
 
+
 class GridWorldSim(tk.Tk):
     # Just one big class!
     def __init__(self, master=None):
@@ -647,11 +648,14 @@ class GridWorldSim(tk.Tk):
                 elif msg[0] == "is_exited":
                     #sets exited boolean
                     rmsg = str(self.exited)
+                    #tk.Tk.quit(self)
                 elif msg[0] == "get_human_damage":
                     rmsg = str(self.human_damage)
                 elif msg[0] == "set_human_damage":
                     self.human_damage = eval(msg[1])
                     rmsg = "OK"
+                elif msg[0] == "end_program":
+                    tk.Tk.destroy(self)
                 else:
                     # updates the current version of human_graph
                     rmsg = self.update_human_graph(message)

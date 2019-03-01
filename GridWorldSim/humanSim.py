@@ -6,7 +6,7 @@ except:
     pass
 
 from humanAgent import HumanAgent
-
+import sys
 
 #TODO: (1)Prevent simulator from erroring out when jobs complete (2)Fix wierd behavior from both agents (race condition maybe?)
 class HumanSim():
@@ -16,11 +16,14 @@ class HumanSim():
         self.abstract = abstract
         self.optimal_human = optimal_human
         self.probabilistic_model = probabilistic_model
+        self.agent = HumanAgent(planner=self.planner, optimal=self.optimal_human)
 
     def run(self):
-        human_agent = HumanAgent(planner=self.planner, optimal=self.optimal_human)
         
-        return human_agent.run()
+        return self.agent.run()
+
+    def end_program(self):
+        self.agent.robot.end_program()
 
 
 
@@ -28,4 +31,5 @@ class HumanSim():
 if __name__ == '__main__':
     sim = HumanSim()
     damage = sim.run()
-    print("Damage: ", damage)
+    print("FINAL DAMAGE: ", damage)
+    sim.end_program()

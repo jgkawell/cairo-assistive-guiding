@@ -15,8 +15,6 @@ import pickle
 import time
 import copy
 import sys
-import numpy as np
-import multiprocessing as mp
 
 
 class PlanningAgent():
@@ -48,7 +46,7 @@ class PlanningAgent():
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
         self.start_distance = 5
-        self.time_limit = 15
+        self.time_limit = 20
         self.time_spent = 0
 
         # use for experiments
