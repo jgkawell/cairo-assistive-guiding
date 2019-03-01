@@ -25,7 +25,7 @@ class RobotSim():
         self.agent.robot.end_program()
 
 if __name__ == '__main__':
-    sim = RobotSim(abstract=False, probabilistic_model=False)
+    sim = RobotSim(abstract=True, probabilistic_model=False)
     avg_time = sim.run()
     print("AVERAGE RUNTIME: ", avg_time)
     sim.end_program()

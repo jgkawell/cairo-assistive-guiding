@@ -206,7 +206,8 @@ class PlanningAgent():
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
             print("ROBOT:  Human path cost: ", human_real_path.total_cost)
 
-            if human_real_path.total_cost >= self.cost_limit:
+            cur_damage = self.robot.get_human_damage()
+            if human_real_path.total_cost + cur_damage >= self.cost_limit:
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False
                 for sample_num in range(self.num_samples):
@@ -341,7 +342,8 @@ class PlanningAgent():
 
                 for key, cost in costs.items():
                     predicted_cost = cost + cur_cost
-                    if predicted_cost > self.cost_limit:
+                    cur_cost = self.robot.get_human_damage()
+                    if predicted_cost + cur_cost > self.cost_limit:
                         new_obstacles.append(key)
                         self.removeEdgeFromGivenGraph(copy_graph, cur_key, key)
                         repeat = True
