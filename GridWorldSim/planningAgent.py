@@ -300,18 +300,31 @@ class PlanningAgent():
                     # make sure not to create obstacles forward along the desired path
                     if neighbor != next_key:
                         # get possible human path
-                        possible_human_path = self.getHumanPathByDirection(copy_graph, cur_key, next_key, cur_neighbors)
-                        #human_path is sometimes empty list
+                        possible_human_path = self.getHumanPathByDirection(copy_graph, cur_key, neighbor, cur_neighbors)
+                        # human_path is sometimes empty list
                         if len(possible_human_path.vertex_keys) > 0:
                             full_possible_human_path = path_planning.abstract_to_full_path(self.real_graph, possible_human_path)
 
                             if neighbor == predicted_key:  # predicted path
-                                costs[neighbor] = (self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = 1 #full_possible_human_path.total_cost #(self.human_optimality_prob) * full_possible_human_path.total_cost
                             else:  # unpredicted path
-                                costs[neighbor] = (1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+                                costs[neighbor] = 0 #full_possible_human_path.total_cost #(1 - self.human_optimality_prob) * full_possible_human_path.total_cost
+
+                cur_path = PlanningPath()
+                prev_vertex = self.abstract_graph.get_vertex(desired_path.vertex_keys[0])
+                for j in range(1, i):
+                    cur_vertex = self.abstract_graph.get_vertex(desired_path.vertex_keys[j])
+                    info = prev_vertex.get_neighbors()[cur_vertex.key]
+                    edge_dist = info[1]
+                    edge_cost = info[2]
+                    cur_path.add_vertex(prev_vertex.key, new_distance=edge_dist, new_cost=edge_cost)
+                    prev_vertex = self.abstract_graph.get_vertex(desired_path.vertex_keys[j])
+
+                cur_cost = cur_path.total_cost
 
                 for key, cost in costs.items():
-                    if cost > 0.25: #self.cost_limit:
+                    predicted_cost = cost + cur_cost
+                    if predicted_cost > self.cost_limit:
                         new_obstacles.append(key)
                         self.removeEdgeFromGivenGraph(copy_graph, cur_key, key)
                         repeat = True
