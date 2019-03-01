@@ -134,7 +134,7 @@ class HumanAgent():
         self.robot.set_can_robot_move(True)
         while cur_key not in self.goals:
             # pause before moving
-            time.sleep(1)
+            time.sleep(0.1)
             # check sim to find allowance to move
             while not can_move and self.planner:
                 can_move = self.robot.can_human_move()
@@ -165,9 +165,17 @@ class HumanAgent():
 
                 # get a random neighbor
                 xy = (self.robot.posx, self.robot.posy)
-                cur_neighbors = self.human_graph.get_vertex(self.human_graph.get_key(xy)).get_neighbors()
-                rand_neighbor = list(cur_neighbors.keys())[np.random.randint(0, len(cur_neighbors))]
-                coord = self.human_graph.get_vertex(rand_neighbor).get_xy(self.world_size)
+                cur_neighbors = list(self.human_graph.get_vertex(self.human_graph.get_key(xy)).get_neighbors().keys())
+                
+                # # only make random move if at intersection
+                # if len(cur_neighbors) > 2:
+                next_key = cur_neighbors[np.random.randint(0, len(cur_neighbors))]
+
+                # generate path in direction of random move
+                self.path = self.getHumanPathByDirection(self.human_graph, cur_key, next_key, cur_neighbors)
+                i = 0
+
+                coord = self.human_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
 
                 # move and reset cur_key
                 self.move_helper(coord)
@@ -176,16 +184,11 @@ class HumanAgent():
                 temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
                 self.damage_taken += temp_damage
                 self.robot.set_human_damage(self.damage_taken)
-
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
                 can_move = False
 
-                # reset position and find new path
-                i = 0
-                xy = (self.robot.posx, self.robot.posy)
-                start = self.human_graph.get_key(xy)
-                self.path = a_star(self.human_graph, start, self.goals)
+                i += 1
 
             else:
                 coord = self.human_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
@@ -205,9 +208,8 @@ class HumanAgent():
                 i += 1
 
             if self.damage_taken >= self.damage_limit:
-                print("HUMAN: Damage limit reached (FAILURE)")
-                self.robot.set_exited(True)
-                break
+                #print("HUMAN: Damage limit reached (FAILURE)")
+                return
 
 
     def getHumanGraph(self):
@@ -299,6 +301,36 @@ class HumanAgent():
             self.heading = 270
 
             if msg == "OK": self.robot.posy -= 1
+
+    # get the human's predicted path in a certain direction
+    def getHumanPathByDirection(self, graph, cur_key, next_key, neighbors):
+        # create a new copy to add temporary obstacles to
+        copy_graph = copy.deepcopy(graph)
+
+        # force path_planning to generate human path in given direction to accumulate cost
+        # by removing other neighbors
+        for temp_key in neighbors:
+            if temp_key != next_key:
+                self.removeEdgeFromGivenGraph(copy_graph, cur_key, temp_key)
+
+        # generate the cost by using a_star (human model)
+        return path_planning.a_star(copy_graph, cur_key, self.goals)
+
+    # bidirectional removal of and edge given the graph and keys
+    def removeEdgeFromGivenGraph(self, graph, key_a, key_b):
+        self.removeSingleEdgeFromGivenGraph(graph, key_a, key_b)
+        self.removeSingleEdgeFromGivenGraph(graph, key_b, key_a)
+
+    # removes the edge in a single direction
+    def removeSingleEdgeFromGivenGraph(self, graph, from_key, to_key):
+        # pull out neighbors of from vertex
+        neighbors_from = graph.get_vertex(from_key).get_neighbors()
+
+        # remove neighbor with matching key
+        for key in neighbors_from.keys():
+            if key == to_key:
+                del(neighbors_from[key])
+                break
 
 
 if __name__ == "__main__":
