@@ -136,6 +136,11 @@ class GRobot():
     def is_exited(self):
         return eval(self._send("is_exited"))
 
+    def get_human_damage(self):
+        return self._send("get_human_damage " + self.rname)
+
+    def set_human_damage(self, value):
+        return self._send("set_human_damage " + str(value))
 
 
 def demo():
