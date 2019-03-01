@@ -315,8 +315,8 @@ def recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit,
             if new_path.total_cost + current_cost < cost_limit:
                 # found solution
                 if key in goal_keys:
-                    print("Cost: ", new_path.total_cost + current_cost)
-                    print("Limit: ", cost_limit)
+                    # print("Cost: ", new_path.total_cost + current_cost)
+                    # print("Limit: ", cost_limit)
                     return True, new_path
                 else:
                     # pull out new vertex and pass it for the recursion
