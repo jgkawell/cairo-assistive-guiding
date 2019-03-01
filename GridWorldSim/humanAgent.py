@@ -170,6 +170,7 @@ class HumanAgent():
                 #accumulate damage
                 temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
                 self.damage_taken += temp_damage
+                self.robot.set_human_damage(self.damage_taken)
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
@@ -190,6 +191,7 @@ class HumanAgent():
                 #accumulate damage
                 temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
                 self.damage_taken += temp_damage
+                self.robot.set_human_damage(self.damage_taken)
 
                 #human and planner take turns moving
                 self.robot.set_can_robot_move(True)
