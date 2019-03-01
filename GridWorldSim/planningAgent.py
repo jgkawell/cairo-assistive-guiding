@@ -95,7 +95,6 @@ class PlanningAgent():
                 break
 
         # print start info
-        start_x, start_y = 29, 10
         print("ROBOT:  Start: " + str((start_x, start_y)))
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
@@ -466,7 +465,6 @@ class PlanningAgent():
 
                             # try to place obstacle
                             new_obstacles = self.mitigation_path.obstacles[(vtx_key, self.mitigation_path_pos)]
-                            print(new_obstacles)
                             for new_obstacle in new_obstacles:
                                 if new_obstacle != None:
                                     cur_key = new_obstacle[0]
@@ -476,7 +474,6 @@ class PlanningAgent():
                                         if wait == -1:
                                             return
                                         elif wait:
-                                            print(self.mitigation_path_pos)
                                             print("ROBOT:  Waiting...")
                                             return
 
@@ -490,7 +487,6 @@ class PlanningAgent():
 
     def removeDesiredPathFirstEntry(self):
         try:
-            key = self.desired_path.vertex_keys[0]
             del(self.desired_path.vertex_keys[0])
         except:
             x = 0

@@ -238,49 +238,49 @@ def find_paths(graph, start_key, goal_keys, num_paths, current_cost, cost_limit,
 
     # multithreading for speed
     # --------------------------------------------
-    # manager = multiprocessing.Manager()
-    # return_dict = manager.dict()
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
 
-    # start recursion to build out solution path list
-    # while len(paths) < num_paths:
-    #     start = timer()
-    #     jobs = []        
-    #     for i in range(num_paths):
-    #         cur_path = PlanningPath([start_key])
-    #         p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path))
-    #         jobs.append(p)
-    #         p.start()
-        
-    #     for p in jobs:
-    #         p.join()
-
-    #     for solved, new_path in return_dict.values():
-    #         if solved and new_path not in paths:
-    #             paths.append(new_path)
-    #             if len(paths) == num_paths:
-    #                 break
-
-    #     end = timer()
-    #     time_spent += end - start
-    #     if time_spent > time_limit:
-    #         return []
-    # --------------------------------------------
-
-
-    # single threading for debugging
-    # --------------------------------------------
     # start recursion to build out solution path list
     while len(paths) < num_paths:
         start = timer()
-        cur_path = PlanningPath([start_key])
-        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path)
-        if solved and new_path not in paths:
-            paths.append(new_path)
+        jobs = []        
+        for i in range(num_paths):
+            cur_path = PlanningPath([start_key])
+            p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path))
+            jobs.append(p)
+            p.start()
+        
+        for p in jobs:
+            p.join()
+
+        for solved, new_path in return_dict.values():
+            if solved and new_path not in paths:
+                paths.append(new_path)
+                if len(paths) == num_paths:
+                    break
 
         end = timer()
         time_spent += end - start
         if time_spent > time_limit:
             return []
+    # --------------------------------------------
+
+
+    # single threading for debugging
+    # --------------------------------------------
+    # # start recursion to build out solution path list
+    # while len(paths) < num_paths:
+    #     start = timer()
+    #     cur_path = PlanningPath([start_key])
+    #     solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, current_cost, cost_limit, cur_path)
+    #     if solved and new_path not in paths:
+    #         paths.append(new_path)
+
+    #     end = timer()
+    #     time_spent += end - start
+    #     if time_spent > time_limit:
+    #         return []
     # --------------------------------------------
 
     return paths
