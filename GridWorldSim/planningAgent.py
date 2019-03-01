@@ -43,7 +43,7 @@ class PlanningAgent():
         # adjustable parameters
         self.cost_limit = 0.5
         self.num_samples = 3
-        self.sample_size = 20
+        self.sample_size = 10
         self.robot_speed = 10
         self.human_optimality_prob = 0.8
         self.start_distance = 5

@@ -38,7 +38,7 @@ class HumanAgent():
         self.damage_tracking_graph = None
         self.damage_taken = 0
         self.damage_limit = 0.5
-        self.distance_damage = 0.01
+        self.distance_damage = 0.001
         self.start_distance = 10 #start 20 cells away from randomly chosen goal
         self.planner = planner #if no planner, don't wait to move
 
