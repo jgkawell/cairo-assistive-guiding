@@ -238,43 +238,43 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, t
 
     # multithreading for speed
     # --------------------------------------------
-    manager = multiprocessing.Manager()
-    return_dict = manager.dict()
+    # manager = multiprocessing.Manager()
+    # return_dict = manager.dict()
 
     # start recursion to build out solution path list
-    while len(paths) < num_paths:
-        start = timer()
-        jobs = []        
-        for i in range(num_paths):
-            cur_path = PlanningPath([start_key])
-            p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, cost_limit, cur_path))
-            jobs.append(p)
-            p.start()
+    # while len(paths) < num_paths:
+    #     start = timer()
+    #     jobs = []        
+    #     for i in range(num_paths):
+    #         cur_path = PlanningPath([start_key])
+    #         p = multiprocessing.Process(target=dummy, args=(i, return_dict, graph, start_vertex, goal_keys, cost_limit, cur_path))
+    #         jobs.append(p)
+    #         p.start()
         
-        for p in jobs:
-            p.join()
+    #     for p in jobs:
+    #         p.join()
 
-        for solved, new_path in return_dict.values():
-            if solved and new_path not in paths:
-                paths.append(new_path)
-                if len(paths) == num_paths:
-                    break
+    #     for solved, new_path in return_dict.values():
+    #         if solved and new_path not in paths:
+    #             paths.append(new_path)
+    #             if len(paths) == num_paths:
+    #                 break
 
-        end = timer()
-        time_spent += end - start
-        if time_spent > time_limit:
-            return []
+    #     end = timer()
+    #     time_spent += end - start
+    #     if time_spent > time_limit:
+    #         return []
     # --------------------------------------------
 
 
     # single threading for debugging
     # --------------------------------------------
     # start recursion to build out solution path list
-    # while len(paths) < num_paths:
-    #     cur_path = PlanningPath([start_key])
-    #     solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
-    #     if solved and new_path not in paths:
-    #         paths.append(new_path)
+    while len(paths) < num_paths:
+        cur_path = PlanningPath([start_key])
+        solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
+        if solved and new_path not in paths:
+            paths.append(new_path)
     # --------------------------------------------
 
     return paths

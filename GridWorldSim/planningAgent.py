@@ -144,9 +144,6 @@ class PlanningAgent():
     # plan a path to execute
     def plan(self):
 
-        print(self.human_position)
-        print(self.desired_path.vertex_keys)
-
         # if the human has diverged from the desired path, replan
         if self.human_position not in self.desired_path.vertex_keys:
             print("ROBOT:  Replanning...")
@@ -202,6 +199,8 @@ class PlanningAgent():
 
     def findSolution(self, start_key):
             # generate the expected human path
+            human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
+            human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
             print("ROBOT:  Human path cost: ", human_real_path.total_cost)
 
             if human_real_path.total_cost >= self.cost_limit:
