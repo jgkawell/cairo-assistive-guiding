@@ -95,6 +95,7 @@ class PlanningAgent():
                 break
 
         # print start info
+        start_x, start_y = 29, 10
         print("ROBOT:  Start: " + str((start_x, start_y)))
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
@@ -428,12 +429,14 @@ class PlanningAgent():
 
                 # add vertices to mitigation path
                 for key in robot_path_to_obstacle.vertex_keys:
-                    # add vertex to path
-                    self.mitigation_path.add_vertex(key, obstacles=[])
-                    
-                    # encode obstacle into vertex that needs obstacle placement
-                    if key == obstacle_key:
-                        self.mitigation_path.add_obstacle(key, pos=len(self.mitigation_path.vertex_keys)-1, obstacle=obstacle)
+
+                    if first or robot_position != key:
+                        # add vertex to path
+                        self.mitigation_path.add_vertex(key, obstacles=[])
+                        
+                        # encode obstacle into vertex that needs obstacle placement
+                        if key == obstacle_key:
+                            self.mitigation_path.add_obstacle(key, pos=len(self.mitigation_path.vertex_keys)-1, obstacle=obstacle)
 
                 # reset the robot position
                 robot_position = obstacle_key
@@ -458,24 +461,28 @@ class PlanningAgent():
                             vtx_key = self.mitigation_path.vertex_keys[self.mitigation_path_pos]
 
                             # move to next position in path
-                            print("ROBOT:  Moving...")
+                            print("ROBOT:  Moving to vertex: ", vtx_key)
                             self.move_helper(self.real_graph.get_vertex(vtx_key))
 
                             # try to place obstacle
                             new_obstacles = self.mitigation_path.obstacles[(vtx_key, self.mitigation_path_pos)]
+                            print(new_obstacles)
                             for new_obstacle in new_obstacles:
                                 if new_obstacle != None:
                                     cur_key = new_obstacle[0]
-                                    for next_key in new_obstacle[1]:
+                                    copy_list = copy.deepcopy(new_obstacle[1])
+                                    for next_key in copy_list:
                                         wait = self.will_block_human(cur_key, next_key)
                                         if wait == -1:
                                             return
                                         elif wait:
+                                            print(self.mitigation_path_pos)
                                             print("ROBOT:  Waiting...")
                                             return
 
                                         print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
+                                        new_obstacle[1].remove(next_key)
                             
                             self.mitigation_path_pos += 1
                 else:
@@ -492,8 +499,7 @@ class PlanningAgent():
             x = 0
 
     def will_block_human(self, cur_key, next_key):
-        # request the current human position from the sim and pull out the index
-        self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
+        print("ROBOT: Checking if will block human...")
 
         try:
             human_pos = self.desired_path.vertex_keys.index(self.human_position)
@@ -511,6 +517,7 @@ class PlanningAgent():
                     print("ROBOT: Will block human")
                     return True
 
+        print("ROBOT: Won't block human")
         return False
         
 
