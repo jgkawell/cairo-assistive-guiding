@@ -122,9 +122,6 @@ class PlanningAgent():
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
 
-
-
-
     # gets the human_graph from the sim
     def getHumanGraph(self):
         sys.modules['path_planning'] = path_planning
@@ -202,7 +199,7 @@ class PlanningAgent():
                 # loop until a solution is found or the sampling limit is hit
                 found_sol = False
                 for sample_num in range(self.num_samples):
-                    print("ROBOT:  Sample number: ", sample_num+1, end="\r")
+                    print("ROBOT:  Sample number: ", sample_num+1)
                 
                     # find a sampling of paths that fits constraints (cost_limit)
                     sample_paths = path_planning.find_paths(self.abstract_graph, start_key, self.goal_keys, self.cost_limit, self.sample_size)
@@ -236,7 +233,10 @@ class PlanningAgent():
                                 full_path = path_planning.abstract_to_full_path(self.real_graph, sample_path)
                                 self.desired_path = copy.deepcopy(full_path)
                                 self.desired_path_abstract = copy.deepcopy(sample_path)
-                                break             
+
+                                print("ROBOT: desired_path: ", self.desired_path.vertex_keys)
+                                print("ROBOT: obstacles: ", obstacle_list)
+                                break
 
                     if not found_sol:
                         print("ROBOT:  No solution...")
@@ -411,7 +411,7 @@ class PlanningAgent():
             # check sim to find allowance to move
             can_move = self.robot.can_robot_move()
             if not can_move:
-                print("ROBOT:  Waiting...", end='\r')
+                print("ROBOT:  Waiting...")
                 time.sleep(1)
             else:
                 mitigation_path_size = len(self.mitigation_path.vertex_keys)

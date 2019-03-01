@@ -255,7 +255,7 @@ class GridWorldSim(tk.Tk):
                 del(neighbors_from[key])
                 break
 
-        print("Removed edges between keys: ", (from_key, to_key))
+        print("Removed edges between cells: ", (self.real_graph.get_vertex(from_key).get_xy(self.world_size), self.real_graph.get_vertex(to_key).get_xy(self.world_size)))
 
 
     def fillGrid(self, x, y, cell_type):

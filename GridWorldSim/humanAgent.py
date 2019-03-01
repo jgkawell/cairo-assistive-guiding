@@ -34,12 +34,14 @@ class HumanAgent():
         self.optimal = optimal
         self.optimality_constant = 0.2
         self.reward_removal_constant = 0.5
-        self.real_graph = None
+        self.human_graph = None
         self.damage_tracking_graph = None
         self.damage_taken = 0
+        self.damage_limit = 0.5
         self.distance_damage = 0.01
         self.start_distance = 10 #start 20 cells away from randomly chosen goal
         self.planner = planner #if no planner, don't wait to move
+
         # get file name from simulator
         file_name = self.robot.get_cur_file()
 
@@ -74,7 +76,7 @@ class HumanAgent():
 
 
     def sendGraph(self):
-        serialized_graph = pickle.dumps(copy.deepcopy(self.real_graph), protocol=2)
+        serialized_graph = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
         self.robot._send(serialized_graph, "byte")
 
     def run(self):
@@ -84,14 +86,14 @@ class HumanAgent():
 
     def plan(self):
         # generate graph world
-        self.real_graph = Graph()
-        self.real_graph.setup_graph(self.world, self.world_size)
+        self.human_graph = Graph()
+        self.human_graph.setup_graph(self.world, self.world_size)
         self.sendGraph()
 
         # build goal info
         self.goals = []
         for xy in self.reward_states:
-            goal = self.real_graph.get_key(xy)
+            goal = self.human_graph.get_key(xy)
             self.goals.append(goal)
 
         # generate a start position distant from goal states
@@ -110,20 +112,19 @@ class HumanAgent():
                 start_x, start_y = x1, y1
 
         # recreate human agent with start positions
-        start_x, start_y = 18, 14
-        self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="yellow")
+        self.robot = GRobot("HumanAgent", posx=start_x, posy=start_y, colour="orange")
 
         # build start info
         xy = (start_x, start_y)
-        start = self.real_graph.get_key(xy)
+        start = self.human_graph.get_key(xy)
         print("HUMAN:  Start: " + str(xy))
 
         #path plan with A*
-        self.path = a_star(self.real_graph, start, self.goals)
+        self.path = a_star(self.human_graph, start, self.goals)
 
     def move(self):
         i = 1
-        cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+        cur_key = self.human_graph.get_key((self.robot.posx, self.robot.posy))
         can_move = False
         self.robot.set_can_robot_move(True)
         while cur_key not in self.goals:
@@ -133,35 +134,40 @@ class HumanAgent():
             while not can_move and self.planner:
                 can_move = self.robot.can_human_move()
                 if not can_move:
-                    print("HUMAN:  Waiting...", end='\r')
+                    print("HUMAN:  Waiting...")
                     time.sleep(1)
                     
             # check current world state
             valid, changed = self.robot.look()
+
             # found new world knowledge
             if changed:
                 print("HUMAN:  New world knowledge!")
                 # update world knowledge
-                self.real_graph = self.getHumanGraph()
+                self.human_graph = self.getHumanGraph()
 
                 # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
-                start = self.real_graph.get_key(xy)
-                self.path = a_star(self.real_graph, start, self.goals)
+                start = self.human_graph.get_key(xy)
+                self.path = a_star(self.human_graph, start, self.goals)
                 print("HUMAN:  New path: ", self.path.vertex_keys)
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
                 print("HUMAN:  Random Move")
-                coord = (self.robot.posx + np.random.randint(-1, 1), self.robot.posy + np.random.randint(-1, 1))
+
+                # get a random neighbor
+                xy = (self.robot.posx, self.robot.posy)
+                cur_neighbors = self.human_graph.get_vertex(self.human_graph.get_key(xy)).get_neighbors()
+                rand_neighbor = np.random.randint(0, len(cur_neighbors))
+                coord = self.human_graph.get_vertex(rand_neighbor).get_xy(self.world_size)
 
                 # move and reset cur_key
                 self.move_helper(coord)
-                cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+                cur_key = self.human_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
                 temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
-                print("INFLICT ", temp_damage)
                 self.damage_taken += temp_damage
 
                 #human and planner take turns moving
@@ -171,18 +177,17 @@ class HumanAgent():
                 # reset position and find new path
                 i = 0
                 xy = (self.robot.posx, self.robot.posy)
-                start = self.real_graph.get_key(xy)
-                self.path = a_star(self.real_graph, start, self.goals)
+                start = self.human_graph.get_key(xy)
+                self.path = a_star(self.human_graph, start, self.goals)
 
             else:
-                coord = self.real_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
+                coord = self.human_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
 
                 # move and reset cur_key
                 self.move_helper(coord)
-                cur_key = self.real_graph.get_key((self.robot.posx, self.robot.posy))
+                cur_key = self.human_graph.get_key((self.robot.posx, self.robot.posy))
                 #accumulate damage
                 temp_damage = self.damage_tracking_graph.get_vertex(cur_key).cost + self.distance_damage
-                print("INFLICT ", temp_damage)
                 self.damage_taken += temp_damage
 
                 #human and planner take turns moving
