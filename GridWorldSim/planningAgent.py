@@ -44,8 +44,8 @@ class PlanningAgent():
         self.cost_limit = 0.5
         self.num_samples = 3
         self.sample_size = 10
-        self.robot_speed = 10
-        self.human_optimality_prob = 0.8
+        self.robot_speed = 2
+        self.human_optimality_prob = 0.95
         self.start_distance = 5
         self.time_limit = 20
         self.time_spent = 0

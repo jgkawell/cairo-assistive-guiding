@@ -263,6 +263,7 @@ def find_paths(graph, cur_damage, start_key, goal_keys, num_paths, current_cost,
         end = timer()
         time_spent += end - start
         if time_spent > time_limit:
+            print("ROBOT: Ran out of time in sampling...")
             return []
     # --------------------------------------------
 
