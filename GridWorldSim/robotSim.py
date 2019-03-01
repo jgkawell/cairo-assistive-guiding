@@ -17,12 +17,17 @@ class RobotSim():
         self.abstract = abstract
         self.optimal_human = optimal_human
         self.probabilistic_model = probabilistic_model
+        self.agent = PlanningAgent(abstract=self.abstract, probabilistic=self.probabilistic_model)
 
     def run(self):
-        planning_agent = PlanningAgent(abstract=self.abstract, probabilistic=self.probabilistic_model)
-        planning_agent.run()
+        return self.agent.run()
 
+
+    def end_program(self):
+        self.agent.robot.end_program()
 
 if __name__ == '__main__':
     sim = RobotSim()
-    sim.run()
+    avg_time = sim.run()
+    print("AVERAGE RUNTIME: ", avg_time)
+    sim.end_program()

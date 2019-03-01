@@ -32,4 +32,3 @@ if __name__ == '__main__':
     sim = HumanSim()
     damage = sim.run()
     print("FINAL DAMAGE: ", damage)
-    sim.end_program()

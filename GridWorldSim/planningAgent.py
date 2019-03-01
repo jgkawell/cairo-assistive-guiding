@@ -10,6 +10,7 @@ from grobot import GRobot
 from random import randint
 from path_planning import Graph, PlanningPath
 from timeit import default_timer as timer
+import numpy as np
 import path_planning
 import pickle
 import time
@@ -48,6 +49,7 @@ class PlanningAgent():
         self.start_distance = 5
         self.time_limit = 20
         self.time_spent = 0
+        self.times = []
 
         # use for experiments
         self.abstract = abstract
@@ -126,6 +128,7 @@ class PlanningAgent():
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
             self.removeDesiredPathFirstEntry()
+        return np.mean(self.times)
 
     # gets the human_graph from the sim
     def getHumanGraph(self):
@@ -185,6 +188,7 @@ class PlanningAgent():
 
                 end = timer()
                 self.time_spent += end - start
+                self.times.append(self.time_spent)
                 print("ROBOT:  Took: ", end - start)
 
                 if self.time_spent > self.time_limit:
