@@ -12,21 +12,19 @@ import sys
 class HumanSim():
     #bools for (1) having a PlanningAgent (2) Using graph abstraction (3) Optimal vs non-optimal, probabilistic human (4) whether or not PlanningAgent uses a probabilistic model
     def __init__(self, planner=True, optimal_human=True):
-        self.planner = planner
-        self.optimal_human = optimal_human
-        self.agent = HumanAgent(planner=self.planner, optimal=self.optimal_human)
+        self.agent = HumanAgent(planner=planner, optimal=optimal_human)
 
     def run(self):
-        
         return self.agent.run()
 
-    def end_program(self):
-        self.agent.robot.end_program()
-
-
-
-
 if __name__ == '__main__':
-    sim = HumanSim(planner=True, optimal_human=False)
+    # sys.argv: 0=name, 1=planner, 2=optimal
+    planner = eval(sys.argv[1])
+    optimal_human = eval(sys.argv[2])
+    assert isinstance(planner, bool), 'param should be a bool'
+    assert isinstance(optimal_human, bool), 'param should be a bool'
+
+    sim = HumanSim(planner=planner, optimal_human=optimal_human)
     damage = sim.run()
     print("FINAL DAMAGE: ", damage)
+    sys.exit(0)

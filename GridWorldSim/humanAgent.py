@@ -82,6 +82,11 @@ class HumanAgent():
     def run(self):
         self.plan()
         self.move()
+
+        # close simulation
+        self.robot.set_exited(True)
+
+        print("HUMAN: Exit")
         return self.damage_taken
 
     def plan(self):

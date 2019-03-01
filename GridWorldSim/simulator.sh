@@ -1,11 +1,16 @@
 #!/bin/bash
-damages=()
-damage=0
 
-./GridWorldSim.pyw &
-sleep 1
-python3 humanSim.py &
-sleep 2
-python3 robotSim.py
+for i in {1..10}
+do
+    ./GridWorldSim.pyw &
+    sleep 1
+    # sys.argv: 0=name, 1=planner, 2=optimal
+    python3 humanSim.py True False & 
+    sleep 1
+    # sys.argv: 0=name, 1=abstract, 2=probabilistic_model
+    python3 robotSim.py True True &
 
-echo All done
+    wait
+done
+
+echo "All done"

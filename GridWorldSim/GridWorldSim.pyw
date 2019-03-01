@@ -655,7 +655,7 @@ class GridWorldSim(tk.Tk):
                     self.human_damage = eval(msg[1])
                     rmsg = "OK"
                 elif msg[0] == "end_program":
-                    tk.Tk.destroy(self)
+                    rmsg = "EXIT"
                 else:
                     # updates the current version of human_graph
                     rmsg = self.update_human_graph(message)
@@ -679,6 +679,11 @@ class GridWorldSim(tk.Tk):
                 cli_sock.send(rmsg)
 
         cli_sock.close()
+        if rmsg == "EXIT":
+            print("SIM: Exit")
+            tk.Tk.destroy(self)
+            sys.exit()
+
         return
 
 

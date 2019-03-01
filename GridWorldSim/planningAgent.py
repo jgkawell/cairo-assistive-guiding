@@ -128,6 +128,10 @@ class PlanningAgent():
             # request the current human position from the sim
             self.human_position = self.real_graph.get_key(self.robot.get_xy_pos(self.human_name))
             self.removeDesiredPathFirstEntry()
+
+        print("ROBOT: Exit")
+        self.robot.end_program()
+
         return np.mean(self.times)
 
     # gets the human_graph from the sim
@@ -135,19 +139,12 @@ class PlanningAgent():
         sys.modules['path_planning'] = path_planning
         return pickle.loads(self.robot.get_cur_human_graph())
 
-    def elapseTime(self, p_num, timer_dict):
-        start_time = timer()
-        while (timer() - start_time < self.time_limit):
-            pass
-        print("Exiting elapseTime...")
-        timer_dict[p_num] = timer() - start_time
-
     # plan a path to execute
     def plan(self):
 
         # if the human has diverged from the desired path, replan
         if self.human_position not in self.desired_path.vertex_keys:
-            print("ROBOT:  Replanning...")
+            #print("ROBOT:  Replanning...")
 
             found_sol = False
             maxed = False
