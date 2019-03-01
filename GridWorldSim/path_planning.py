@@ -263,8 +263,7 @@ def find_paths(graph, cur_damage, start_key, goal_keys, num_paths, current_cost,
         end = timer()
         time_spent += end - start
         if time_spent > time_limit:
-            print("ROBOT: Ran out of time in sampling...")
-            return []
+            return [], time_spent
     # --------------------------------------------
 
 
@@ -281,10 +280,10 @@ def find_paths(graph, cur_damage, start_key, goal_keys, num_paths, current_cost,
     #     end = timer()
     #     time_spent += end - start
     #     if time_spent > time_limit:
-    #         return []
+    #         return [], time_spent
     # --------------------------------------------
 
-    return paths
+    return paths, time_spent
 
 def dummy(p_num, return_dict, graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path, cur_damage):
     return_dict[p_num] = recurse_path_finding(graph, cur_vertex, goal_keys, current_cost, cost_limit, cur_path, cur_damage)
