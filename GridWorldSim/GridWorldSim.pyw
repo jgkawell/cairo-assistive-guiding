@@ -70,7 +70,7 @@ class GridWorldSim(tk.Tk):
         self.gridspace = 20
         self.robots = {}  # Mutiple named robots 
         self.shp = []  # Robot shapes list
-        self.trails = False  # Trails off to start with
+        self.trails = True  # Trails off to start with
         tk.Tk.__init__(self, master)
         tk.Tk.title(self, "Robot Grid World")
 
