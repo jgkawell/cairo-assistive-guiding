@@ -88,13 +88,13 @@ class PlanningAgent():
         x2, y2 = self.real_graph.get_vertex(self.human_position).get_xy(self.world_size)
         while True:
             x1, y1 = self.empty_states[randint(0, len(self.empty_states)-1)]
-            dist = np.sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
-            if dist > self.start_distance and dist < self.start_distance+1:
+            temp_path = path_planning.a_star(self.real_graph, self.real_graph.get_key((x1,y1)), [self.real_graph.get_key((x2,y2))])
+
+            if len(temp_path.vertex_keys) <= self.start_distance:
                 start_x, start_y = x1, y1
                 break
 
         # print start info
-        start_x, start_y = 18, 13
         print("ROBOT:  Start: " + str((start_x, start_y)))
         self.robot = GRobot("PlanningAgent", posx=start_x, posy=start_y, colour="purple")
 
