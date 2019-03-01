@@ -235,6 +235,8 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, t
     paths = []
     start_vertex = graph.get_vertex(start_key)
 
+    # multithreading for speed
+    # --------------------------------------------
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
 
@@ -261,7 +263,18 @@ def find_paths(graph, start_key, goal_keys, cost_limit, num_paths, time_spent, t
         time_spent += end - start
         if time_spent > time_limit:
             return []
+    # --------------------------------------------
 
+
+    # single threading for debugging
+    # --------------------------------------------
+    # start recursion to build out solution path list
+    # while len(paths) < num_paths:
+    #     cur_path = PlanningPath([start_key])
+    #     solved, new_path = recurse_path_finding(graph, start_vertex, goal_keys, cost_limit, cur_path)
+    #     if solved and new_path not in paths:
+    #         paths.append(new_path)
+    # --------------------------------------------
 
     return paths
 
