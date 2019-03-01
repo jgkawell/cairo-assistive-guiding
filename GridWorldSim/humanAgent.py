@@ -176,6 +176,10 @@ class HumanAgent():
                 self.path = self.getHumanPathByDirection(self.human_graph, cur_key, next_key, cur_neighbors)
                 i = 0
 
+                # make sure there is a valid path
+                if len(self.path.vertex_keys) == 0:
+                    self.path = path_planning.a_star(self.human_graph, cur_key, self.goals)
+
                 coord = self.human_graph.get_vertex(self.path.vertex_keys[i]).get_xy(self.world_size)
 
                 # move and reset cur_key

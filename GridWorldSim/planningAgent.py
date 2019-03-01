@@ -47,7 +47,7 @@ class PlanningAgent():
         self.robot_speed = 2
         self.human_optimality_prob = 0.95
         self.start_distance = 5
-        self.time_limit = 20
+        self.time_limit = 10
         self.time_spent = 0
         self.times = []
 
@@ -496,7 +496,7 @@ class PlanningAgent():
                 if mitigation_path_size > 0 and self.mitigation_path_pos < mitigation_path_size:
 
                     # move given number of times by speed
-                    for cur_move in range(self.robot_speed):
+                    for cur_move in range(self.robot_speed+1):
                         # check to make sure there is a valid move
                         if self.mitigation_path_pos < mitigation_path_size:
                             # pull out vertex info (skip first location)
@@ -561,7 +561,7 @@ class PlanningAgent():
         start = self.real_graph.get_key(self.robot.get_xy_pos("PlanningAgent"))
         path_to_human = path_planning.a_star(self.real_graph, start, [self.human_position])
 
-        for i in range(self.robot_speed):
+        for i in range(self.robot_speed+1):
             try:
                 #print("ROBOT:  Moving towards human ", i)
                 move_vertex = self.real_graph.get_vertex(path_to_human.vertex_keys[i])
