@@ -26,6 +26,7 @@ import sys
 class HumanAgent():
 
     def __init__(self, knowledge=1, optimal=True, planner=True):
+
         # Initialise globals
         self.robot = GRobot("HumanAgent", colour="blue")
         self.heading = 90 #0=forward, 90 = right, 180 = down, 270 = left
@@ -147,7 +148,7 @@ class HumanAgent():
 
             # found new world knowledge
             if changed:
-                print("HUMAN:  New world knowledge!")
+                #print("HUMAN:  New world knowledge!")
                 # update world knowledge
                 self.human_graph = self.getHumanGraph()
 
@@ -157,11 +158,11 @@ class HumanAgent():
                 start = self.human_graph.get_key(xy)
                 self.path = a_star(self.human_graph, start, self.goals)
                 del(self.path.vertex_keys[0])
-                print("HUMAN:  New path: ", self.path.vertex_keys)
+                #print("HUMAN:  New path: ", self.path.vertex_keys)
 
             # if making a random move, rerun A*
             if self.optimal == False and np.random.uniform() <= self.optimality_constant:
-                print("HUMAN:  Random Move")
+                #print("HUMAN:  Random Move")
 
                 # get a random neighbor
                 xy = (self.robot.posx, self.robot.posy)
@@ -219,7 +220,7 @@ class HumanAgent():
     def move_helper(self, coord):
         (x, y) = coord
         direction = (x - self.robot.posx, y - self.robot.posy)
-        print("HUMAN:  Current, Intended:", (self.robot.posx, self.robot.posy), (x, y))
+        #print("HUMAN:  Current, Intended:", (self.robot.posx, self.robot.posy), (x, y))
 
         # check for success
         msg = ""

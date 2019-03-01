@@ -152,11 +152,11 @@ class GridWorldSim(tk.Tk):
         # Work in progress!
         for rob_name in self.robots:
             if self.trails == True:
-                print("OFF")
+                #print("OFF")
                 self.robots[rob_name].penup()
                 self.robots[rob_name].clear()
             else:
-                print("ON")
+                #print("ON")
                 self.robots[rob_name].pendown()
         if self.trails == True:
             self.trails = False
@@ -239,7 +239,7 @@ class GridWorldSim(tk.Tk):
     def update_human_graph(self, serializedGraph):
         sys.modules['path_planning'] = path_planning
         self.human_graph = pickle.loads(serializedGraph)
-        print("Updated human graph")
+        #print("Updated human graph")
         return "OK"
 
     def remove_edge(self, graph, key_a, key_b):
@@ -257,7 +257,7 @@ class GridWorldSim(tk.Tk):
                 del(neighbors_from[key])
                 break
 
-        print("Removed edges between cells: ", (self.real_graph.get_vertex(from_key).get_xy(self.world_size), self.real_graph.get_vertex(to_key).get_xy(self.world_size)))
+        #print("Removed edges between cells: ", (self.real_graph.get_vertex(from_key).get_xy(self.world_size), self.real_graph.get_vertex(to_key).get_xy(self.world_size)))
 
 
     def fillGrid(self, x, y, cell_type):
@@ -500,7 +500,7 @@ class GridWorldSim(tk.Tk):
                         
                 # remove edges from human_graph
                 for edge in edge_to_remove:
-                    print("Removing edge in human graph:")
+                    #print("Removing edge in human graph:")
                     self.remove_edge(self.human_graph, edge[0], edge[1])
 
             return valid, changed
@@ -586,7 +586,8 @@ class GridWorldSim(tk.Tk):
         try:
             msg = message.decode("utf-8")
         except:
-            print("Not string")
+            x = 0
+            # print("Not string")
 
         if msg != "Q":
             # split string msg into parts (by spaces)
@@ -623,7 +624,7 @@ class GridWorldSim(tk.Tk):
                     rmsg = pickle.dumps(copy.deepcopy(self.human_graph), protocol=2)
                 elif msg[0] == "remove_edge":
                     # removes an edge from real_graph
-                    print("Removing edge in real graph:")
+                    #print("Removing edge in real graph:")
                     key_a = msg[2]
                     key_b = msg[3]
                     rmsg = self.remove_edge(self.real_graph, int(key_a), int(key_b))
