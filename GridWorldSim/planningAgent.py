@@ -47,7 +47,7 @@ class PlanningAgent():
         self.robot_speed = 2
         self.human_optimality_prob = 0.95
         self.start_distance = 5
-        self.time_limit = 10
+        self.time_limit = 20
         self.time_spent = 0
         self.times = []
 
@@ -147,7 +147,7 @@ class PlanningAgent():
 
         # if the human has diverged from the desired path, replan
         if self.human_position not in self.desired_path.vertex_keys:
-            #print("ROBOT:  Replanning...")
+            print("ROBOT:  Replanning...")
 
             found_sol = False
             maxed = False
@@ -163,7 +163,7 @@ class PlanningAgent():
                 start = timer()
 
                 # simplify for certain level
-                #print("ROBOT:  Running on level: ", level)
+                print("ROBOT:  Running on level: ", level)
                 #TODO: Doesn't work if we don't use abstraction. Fix abstract_graph code to be the full graph if self.abstract is False
                 new_size = self.simplifyWorld(old_size, level=self.max_level if not self.abstract else level)
                 level += 1
@@ -190,10 +190,10 @@ class PlanningAgent():
                 end = timer()
                 self.time_spent += end - start
                 self.times.append(self.time_spent)
-                #print("ROBOT:  Took: ", end - start)
+                print("ROBOT:  Took: ", end - start)
 
                 if self.time_spent > self.time_limit:
-                    #print("ROBOT:  Ran out of time...")
+                    print("ROBOT:  Ran out of time...")
                     break
 
             return found_sol
@@ -205,18 +205,18 @@ class PlanningAgent():
             human_path = path_planning.a_star(self.abstract_graph, start_key, self.goal_keys)
             human_real_path = path_planning.abstract_to_full_path(self.real_graph, human_path)
             current_cost = self.robot.get_human_damage()
-            #print("ROBOT:  Human path cost: ", human_real_path.total_cost + current_cost)
+            print("ROBOT:  Human path cost: ", human_real_path.total_cost + current_cost)
 
             
             found_sol = False
 
             # if the human is going to die, find alternative path
             if human_real_path.total_cost + current_cost >= self.cost_limit:
-                #print("ROBOT:  Human's path not okay...")
+                print("ROBOT:  Human's path not okay...")
 
                 # loop until a solution is found or the sampling limit is hit
                 for sample_num in range(self.num_samples):
-                    #print("ROBOT:  Sample number: ", sample_num+1)
+                    print("ROBOT:  Sample number: ", sample_num+1)
                 
                     # find a sampling of paths that fits constraints (cost_limit)
                     current_cost = self.robot.get_human_damage()
@@ -224,7 +224,7 @@ class PlanningAgent():
                     sample_paths, self.time_spent = path_planning.find_paths(self.abstract_graph, current_cost, start_key, self.goal_keys, self.sample_size, current_cost, self.cost_limit, self.time_spent, self.time_limit)
 
                     if self.time_spent > self.time_limit:
-                        #print("ROBOT:  Ran out of time...")
+                        print("ROBOT:  Ran out of time...")
                         return False
 
                     for sample_path in sample_paths:
@@ -232,7 +232,7 @@ class PlanningAgent():
                             self.previous_paths.append(sample_path)
                         else:
                             sample_paths.remove(sample_path)
-                    #print("ROBOT:  Finished sampling...")
+                    print("ROBOT:  Finished sampling...")
 
                     # sort list by total cost
                     sample_paths.sort(key=lambda x: x.total_cost, reverse=False)
@@ -244,13 +244,13 @@ class PlanningAgent():
             
             # if the human's path is okay but might be different in the future, modify route
             elif self.probabilistic:
-                #print("ROBOT:  Human's path okay, but might differ...")
+                print("ROBOT:  Human's path okay, but might differ...")
 
                 # initialize sample_paths with human route for probabilistic human
                 sample_paths = [human_path]
                 found_sol = self.evaulateSample(sample_paths, human_path, start_key)
             else:
-                #print("ROBOT:  Human's plan okay...")
+                print("ROBOT:  Human's plan okay...")
 
                 self.desired_path = copy.deepcopy(human_real_path)
                 found_sol = True
@@ -272,7 +272,7 @@ class PlanningAgent():
             end = timer()
             self.time_spent += end - start
             if self.time_spent > self.time_limit:
-                #print("ROBOT:  Ran out of time...")
+                print("ROBOT:  Ran out of time...")
                 return False
 
 
@@ -283,13 +283,13 @@ class PlanningAgent():
                 found_sol = self.planMitigationPath(obstacle_list, start_key)
                 self.time_spent += end - start
                 if self.time_spent > self.time_limit:
-                    #print("ROBOT:  Ran out of time...")
+                    print("ROBOT:  Ran out of time...")
                     return False
 
                 end = timer()
                 self.time_spent += end - start
                 if self.time_spent > self.time_limit:
-                    #print("ROBOT:  Ran out of time...")
+                    print("ROBOT:  Ran out of time...")
                     return False
 
                 # if valid, generate the desired path for the human given obstacles
@@ -299,8 +299,8 @@ class PlanningAgent():
                     self.desired_path = copy.deepcopy(full_path)
                     self.desired_path_abstract = copy.deepcopy(sample_path)
 
-                    #print("ROBOT:  desired_path: ", self.desired_path.vertex_keys)
-                    #print("ROBOT:  obstacles: ", obstacle_list)
+                    print("ROBOT:  desired_path: ", self.desired_path.vertex_keys)
+                    print("ROBOT:  obstacles: ", obstacle_list)
                     break
 
         return found_sol
@@ -459,7 +459,7 @@ class PlanningAgent():
                 if robot_path_to_obstacle.distance < self.robot_speed * human_path_to_obstacle.distance:
                     first = False
                     found_sol = True
-                    #print("ROBOT:  Found solution!")
+                    print("ROBOT:  Found solution!")
                 else:
                     break #if human closer to first obstacle in list, this plan isn't feasible
 
@@ -489,7 +489,7 @@ class PlanningAgent():
             # check sim to find allowance to move
             can_move = self.robot.can_robot_move()
             if not can_move:
-                #print("ROBOT:  Waiting...")
+                print("ROBOT:  Waiting...")
                 time.sleep(1)
             else:
                 mitigation_path_size = len(self.mitigation_path.vertex_keys)
@@ -503,7 +503,7 @@ class PlanningAgent():
                             vtx_key = self.mitigation_path.vertex_keys[self.mitigation_path_pos]
 
                             # move to next position in path
-                            #print("ROBOT:  Moving to vertex: ", vtx_key)
+                            print("ROBOT:  Moving to vertex: ", vtx_key)
                             self.move_helper(self.real_graph.get_vertex(vtx_key))
 
                             # try to place obstacle
@@ -517,17 +517,17 @@ class PlanningAgent():
                                         if wait == -1:
                                             return
                                         elif wait:
-                                            #print("ROBOT:  Waiting...")
+                                            print("ROBOT:  Waiting...")
                                             return
 
-                                        #print("ROBOT:  Placing obstacle...")
+                                        print("ROBOT:  Placing obstacle...")
                                         self.removeEdgeFromRealGraph(key_a=cur_key, key_b=next_key)
                                         new_obstacle[1].remove(next_key)
                             
                             self.mitigation_path_pos += 1
                 else:
                     x = 0
-                    #print("ROBOT:  Nothing to do...")
+                    print("ROBOT:  Nothing to do...")
 
     def removeDesiredPathFirstEntry(self):
         try:
@@ -536,12 +536,12 @@ class PlanningAgent():
             x = 0
 
     def will_block_human(self, cur_key, next_key):
-        #print("ROBOT:  Checking if will block human...")
+        print("ROBOT:  Checking if will block human...")
 
         try:
             human_pos = self.desired_path.vertex_keys.index(self.human_position)
         except:
-            #print("ROBOT:  Human off of desired path...")
+            print("ROBOT:  Human off of desired path...")
             return -1
 
         for i in range(len(self.desired_path_abstract.vertex_keys)-1):
@@ -551,10 +551,10 @@ class PlanningAgent():
             if key_b == cur_key and key_a == next_key:
                 vertex_pos = self.desired_path.vertex_keys.index(key_b)
                 if human_pos < vertex_pos:
-                    #print("ROBOT:  Will block human")
+                    print("ROBOT:  Will block human")
                     return True
 
-        #print("ROBOT:  Won't block human")
+        print("ROBOT:  Won't block human")
         return False
         
     def moveTowardHuman(self):
@@ -563,12 +563,12 @@ class PlanningAgent():
 
         for i in range(self.robot_speed+1):
             try:
-                #print("ROBOT:  Moving towards human ", i)
+                print("ROBOT:  Moving towards human ", i)
                 move_vertex = self.real_graph.get_vertex(path_to_human.vertex_keys[i])
                 self.move_helper(move_vertex)
             except:
                 x = 0
-                #print("ROBOT:  Already at human")
+                print("ROBOT:  Already at human")
 
     def move_helper(self, vertex):
         (x, y) = vertex.get_xy(self.world_size)
