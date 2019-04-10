@@ -1,0 +1,5 @@
+<launch>
+    <node name="human_agent" pkg="cairo_env_manipulation" type="human_agent.py" />
+    <node name="robot_agent" pkg="cairo_env_manipulation" type="robot_agent.py" />
+    <node name="master_planner" pkg="cairo_env_manipulation" type="master_planner.py" />
+</launch>

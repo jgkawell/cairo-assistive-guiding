@@ -1,3 +1,7 @@
+# ROS
+ros_ws/build
+ros_ws/devel
+
 # IDE
 *.vscode*
 *.idea*
