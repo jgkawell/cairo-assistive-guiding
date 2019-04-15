@@ -14,9 +14,14 @@ class HumanAgent():
         rospy.logwarn("HUMAN AGENT: Not implemented!") 
         
     def run(self):
+        move_pub = rospy.Publisher('human_move_info', String, queue_size=10)
+        rate = rospy.Rate(10)
         while(not rospy.is_shutdown()):
             # keep running to check for info on sub
             x = 0
+            move_msg = "Human moved to tile 42"
+            move_pub.publish(move_msg)
+            rate.sleep()
 
 if __name__ == '__main__':
     try:
