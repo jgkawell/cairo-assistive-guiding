@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+
 import rospy
 import numpy as np
 
@@ -17,9 +18,9 @@ class RobotAgent():
         rospy.loginfo("Got %s", data.data)
 
     def run(self):
-        move_pub = rospy.Publisher('robot_move_info', String, queue_size=10)
-        env_mod_pub = rospy.Publisher('env_mod', String, queue_size=10)
-        rospy.Subscriber('assignments', String, self.callback)
+        move_pub = rospy.Publisher('/agent/move', String, queue_size=10)
+        env_mod_pub = rospy.Publisher('/agent/modify', String, queue_size=10)
+        rospy.Subscriber('/planner/assignments', String, self.callback)
         rate = rospy.Rate(10)
 
         while not rospy.is_shutdown():

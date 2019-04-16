@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+
 import rospy
 import numpy as np
 
@@ -14,7 +15,7 @@ class HumanAgent():
         rospy.logwarn("HUMAN AGENT: Not implemented!") 
         
     def run(self):
-        move_pub = rospy.Publisher('human_move_info', String, queue_size=10)
+        move_pub = rospy.Publisher('/agent/move', String, queue_size=10)
         rate = rospy.Rate(10)
         while(not rospy.is_shutdown()):
             # keep running to check for info on sub

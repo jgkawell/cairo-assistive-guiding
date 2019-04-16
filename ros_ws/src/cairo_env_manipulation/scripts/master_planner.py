@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# license removed for brevity
+
 import rospy
 import numpy as np
 
@@ -12,7 +15,7 @@ class MasterPlanner():
         rospy.logwarn("MASTER PLANNER: Not Implemented!")
 
     def run(self):
-        assigner_pub = rospy.Publisher('assignments', String, queue_size=10)
+        assigner_pub = rospy.Publisher('/planner/assignments', String, queue_size=10)
         rate = rospy.Rate(10)
 
         while not rospy.is_shutdown():
