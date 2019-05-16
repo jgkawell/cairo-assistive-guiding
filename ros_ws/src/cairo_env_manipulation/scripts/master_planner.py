@@ -24,15 +24,21 @@ class MasterPlanner():
 
         return
 
+    def path_predictor(self, world):
+        
+        # TODO: Predict the paths of all humans in the world
+
+        # TODO: Determine which humans will violate the constraints
+
+        return
+
     def abstractor(self, world):
 
         # TODO: Abstract world at current state
 
-        # TODO: Predict future human motion and environmental changes
-
         return
 
-    def planner(self, abstract_world, predictions):
+    def candidate_generator(self, abstract_world, predictions):
 
         # TODO: Attempt to generate the desired state of the world
 
@@ -40,11 +46,11 @@ class MasterPlanner():
 
         return
 
-    def assigner(self, desired_world):
+    def task_allocator(self, desired_world):
 
-        # TODO: Attempt to assin a sequence of obstacles to each robot (within constraints)
+        # TODO: Attempt to assign a sequence of obstacles to each robot (within constraints)
 
-        # TODO: Return failure flag to planner if unsuccessful
+        # TODO: Return failure flag to candidate_generator if unsuccessful
 
         return
 
